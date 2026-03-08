@@ -44,6 +44,44 @@ shared-workflows/
 | `REPO_OWNER_PAT` | Yes | ワークフロー連鎖・PR 作成用の Personal Access Token |
 | `SLACK_WEBHOOK_URL` | No | 失敗時の Slack 通知用 Webhook URL |
 
+設定場所: リポジトリの Settings > Secrets and variables > Actions > **New repository secret**
+
+#### CLAUDE_CODE_OAUTH_TOKEN の取得
+
+Claude Code の OAuth トークン。ローカル環境で以下を実行して取得する:
+
+```bash
+claude setup-token
+```
+
+表示されたトークン値をリポジトリ Secret に設定する。
+
+#### REPO_OWNER_PAT の取得
+
+GitHub Personal Access Token。ワークフロー連鎖（GITHUB_TOKEN で作成した PR は他のワークフローをトリガーしない制約の回避）と PR 作成に使用する。
+
+**Fine-grained token（推奨）:**
+
+1. GitHub > Settings > Developer settings > [Personal access tokens > Fine-grained tokens](https://github.com/settings/tokens?type=beta)
+2. **Generate new token** をクリック
+3. Token name: 任意（例: `shared-workflows-pat`）
+4. Repository access: **All repositories** または対象リポジトリを個別選択
+5. Permissions:
+   - **Contents**: Read and write
+   - **Issues**: Read and write
+   - **Pull requests**: Read and write
+   - **Workflows**: Read and write
+6. **Generate token** → 表示されたトークン値をリポジトリ Secret に設定
+
+**Classic token:**
+
+1. GitHub > Settings > Developer settings > [Personal access tokens > Tokens (classic)](https://github.com/settings/tokens)
+2. **Generate new token (classic)** をクリック
+3. Scopes: `repo`（全チェック）+ `workflow`
+4. **Generate token** → 表示されたトークン値をリポジトリ Secret に設定
+
+> **注意**: トークン値は生成時にのみ表示される。紛失した場合は再発行が必要。
+
 ### 2. Variables の設定
 
 | Variable | デフォルト | 説明 |
