@@ -260,7 +260,7 @@ jobs:
 
           gh_comment "$PR_NUMBER" "## copilot-auto-fix: Copilot レビュー指摘への自動対応
 
-          Copilot のレビュー指摘を検出しました。\`/check-pr\` で自動修正を開始します。
+          Copilot のレビュー指摘を検出しました。claude-code-action で自動修正を開始します。
 
           [Actions ログ](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         env:

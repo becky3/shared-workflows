@@ -18,7 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/../auto-fix/_common.sh"
 
-require_env PR_NUMBER
+require_env PR_NUMBER GH_TOKEN GH_REPO
 validate_pr_number "$PR_NUMBER"
 # PR_TITLE は情報提供目的のため、空でもフォールバックして記録を続行
 PR_TITLE="${PR_TITLE:-(タイトル取得失敗)}"

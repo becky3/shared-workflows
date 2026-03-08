@@ -3,7 +3,7 @@
 #
 # 入力（環境変数）:
 #   PR_NUMBER          — 対象PR番号
-#   FORBIDDEN_PATTERNS — 禁止パターン（改行区切りのglob。例: ".env*\npyproject.toml"）
+#   FORBIDDEN_PATTERNS — 禁止パターン（改行区切りのglob。空の場合はスキップ）
 #   GITHUB_OUTPUT      — GitHub Actions 出力ファイル
 #   GH_TOKEN           — GitHub トークン（env経由で gh CLI が自動参照）
 #
@@ -18,7 +18,14 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/_common.sh"
 
-require_env PR_NUMBER FORBIDDEN_PATTERNS GITHUB_OUTPUT
+require_env PR_NUMBER GITHUB_OUTPUT
+
+# FORBIDDEN_PATTERNS が空の場合は禁止パターンなしとして即終了
+if [ -z "${FORBIDDEN_PATTERNS:-}" ]; then
+  echo "forbidden=false" >> "$GITHUB_OUTPUT"
+  echo "No forbidden patterns configured"
+  exit 0
+fi
 
 # PRの変更ファイル一覧を取得
 # 方針: セキュリティ必須処理の失敗 → exit 1（禁止パターンチェックのバイパス防止）
