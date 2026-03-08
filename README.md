@@ -29,6 +29,8 @@ shared-workflows/
 | ワークフロー | 概要 | 必須 Secrets |
 |---|---|---|
 | `claude.yml` | Claude Code Action（`@claude` メンション応答 + `auto-implement` 自動実装） | `CLAUDE_CODE_OAUTH_TOKEN`, `REPO_OWNER_PAT` |
+| `copilot-auto-fix.yml` | Copilot レビュー指摘の自動修正 + マージ | `CLAUDE_CODE_OAUTH_TOKEN`, `REPO_OWNER_PAT` |
+| `post-merge.yml` | マージ後の自動処理（review-batch Issue 更新） | — |
 
 本リポにも caller（`claude-caller.yml`）を配置しており、`@claude` メンションで動作確認が可能。
 
@@ -121,6 +123,8 @@ bash scripts/setup-labels.sh owner/repo
 | サンプル | 対応する Reusable Workflow | 概要 |
 |---------|--------------------------|------|
 | `claude.yml` | `.github/workflows/claude.yml` | Claude Code Action（メンション + auto-implement） |
+| `copilot-auto-fix.yml` | `.github/workflows/copilot-auto-fix.yml` | Copilot レビュー自動修正 + マージ |
+| `post-merge.yml` | `.github/workflows/post-merge.yml` | マージ後の review-batch Issue 更新 |
 
 ### 5. プロンプト・設定ファイルの配置
 
