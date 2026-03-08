@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find shell scripts
+        id: find-scripts
+        run: |
+          SCRIPTS=$(find .github/scripts scripts -name '*.sh' -type f 2>/dev/null || true)
+          if [ -z "$SCRIPTS" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No shell scripts found. Skipping shellcheck."
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "Scripts to check:"
+            echo "$SCRIPTS"
+          fi
+
+      - name: Run shellcheck
+        if: steps.find-scripts.outputs.found == 'true'
+        run: |
+          find .github/scripts scripts -name '*.sh' -type f -print0 \
+            | xargs -0 shellcheck
+
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find workflow files
+        id: find-workflows
+        run: |
+          WORKFLOWS=$(find .github/workflows -name '*.yml' -not -name 'ci.yml' -type f 2>/dev/null || true)
+          if [ -z "$WORKFLOWS" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No workflow files to lint (excluding ci.yml). Skipping."
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "Workflows to check:"
+            echo "$WORKFLOWS"
+          fi
+
+      - name: Run actionlint
+        if: steps.find-workflows.outputs.found == 'true'
+        uses: rhysd/actionlint@v1
