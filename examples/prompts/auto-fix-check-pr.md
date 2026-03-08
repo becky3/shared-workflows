@@ -112,7 +112,7 @@ Markdown のみの変更の場合、コードのテスト・lint はスキップ
 判断済みスレッド（✅ 対応済み、❌ 対応不要、⏸️ 別Issue化）を resolveReviewThread mutation で resolve する。
 以下のエラーハンドリング方針に従うこと:
 
-- owner/repo 取得失敗 → エラーログを出力して resolve をスキップ
+- owner/repo 取得失敗 → エラーログを出力して停止
 - 認証エラー（401/403） → エラーログを出力して即停止
 - 一時的API障害（個別resolve失敗） → warning でログし次のスレッドに継続
 - 全件resolve失敗 → 認証/権限エラーの可能性があるためエラーログを出力
