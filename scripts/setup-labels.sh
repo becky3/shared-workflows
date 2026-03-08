@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-if [ $# -lt 1 ]; then
+if [ "$#" -lt 1 ]; then
   echo "Usage: $0 <owner/repo>"
   echo "Example: $0 becky3/ai-assistant"
   exit 1

@@ -8,7 +8,7 @@ GitHub Actions の Reusable Workflows を集約するリポジトリ。
 ```
 shared-workflows/
 ├── .github/
-│   ├── workflows/       # Reusable Workflows 本体
+│   ├── workflows/       # CI + Reusable Workflows（今後追加予定）
 │   └── scripts/         # ワークフローから呼ばれるスクリプト
 │       ├── auto-fix/    # Copilot Auto Fix 用スクリプト
 │       └── post-merge/  # マージ後処理スクリプト
@@ -41,18 +41,31 @@ shared-workflows/
 
 ### 3. ラベルの作成
 
-このリポジトリの `scripts/setup-labels.sh` を使い、呼び出し側リポジトリにラベルを一括作成する:
+このリポジトリの `scripts/setup-labels.sh` を使い、呼び出し側リポジトリにラベルを一括作成する。
+
+#### リポジトリのクローン
 
 ```bash
-# shared-workflows リポジトリで実行
 git clone https://github.com/becky3/shared-workflows.git
 cd shared-workflows
+```
+
+#### ラベルの適用
+
+```bash
 bash scripts/setup-labels.sh owner/repo
 ```
 
+対象リポジトリごとに `owner/repo` を変えて実行する。既存のラベルはスキップされる。
+
+#### 必要な権限
+
+- `gh` CLI が認証済みであること（`gh auth status` で確認）
+- 対象リポジトリへの Issues の write 権限が必要
+
 ### 4. 呼び出し側ワークフローの配置
 
-`examples/` ディレクトリにサンプルの caller YAML を用意している（Phase3/4 で追加予定）。
+caller YAML のサンプルは今後 `examples/` ディレクトリに追加予定。
 呼び出し側リポジトリの `.github/workflows/` にコピーして使用する。
 
 ### 5. プロンプト・設定ファイルの配置
@@ -64,7 +77,7 @@ bash scripts/setup-labels.sh owner/repo
 
 ## バージョニング
 
-呼び出し側は `@main` で参照する（Reusable Workflows は Phase3/4 で追加予定）:
+呼び出し側は `@main` で参照する（Reusable Workflows は今後追加予定）:
 
 ```yaml
 uses: becky3/shared-workflows/.github/workflows/<workflow>.yml@main

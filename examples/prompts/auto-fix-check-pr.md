@@ -57,7 +57,7 @@ gh api graphql -f query="
 
 ## ステップ 3/8: 関連仕様書の確認と修正実施
 
-- PRの目的に対応する `docs/specs/` の仕様書を特定して読む
+- `docs/specs/` が存在する場合は、PRの目的に対応する仕様書を特定して読む
 - 各指摘について、以下の順で判断する:
   1. **指摘が妥当でない** → スキップ理由を記録して続行
   2. **妥当かつ軽微な修正で対応可能** → その場で修正
@@ -126,7 +126,7 @@ PR_NUMBER={{PR_NUMBER}}
 
 # owner/repo の取得と検証（環境情報付きエラーログ）
 OWNER=$(gh repo view --json owner --jq '.owner.login' 2>&1) || {
-  echo "::error::Failed to get repository owner: $OWNER (GH_REPO=${GH_REPO:-unset}, GH_TOKEN length=${#GH_TOKEN:-0})"
+  echo "::error::Failed to get repository owner: $OWNER (GH_REPO=${GH_REPO:-unset}, GH_TOKEN length=${#GH_TOKEN})"
   exit 1
 }
 REPO=$(gh repo view --json name --jq '.name' 2>&1) || {
