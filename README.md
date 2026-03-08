@@ -8,7 +8,10 @@ GitHub Actions の Reusable Workflows を集約するリポジトリ。
 ```
 shared-workflows/
 ├── .github/
-│   ├── workflows/       # CI + Reusable Workflows
+│   ├── workflows/       # CI + Reusable Workflows + Caller
+│   │   ├── claude.yml          # Reusable: Claude Code Action
+│   │   ├── claude-caller.yml   # Caller: 本リポ用（動作確認）
+│   │   └── ci.yml              # CI: shellcheck + actionlint
 │   └── scripts/         # ワークフローから呼ばれるスクリプト
 │       ├── auto-fix/    # Copilot Auto Fix 用スクリプト
 │       └── post-merge/  # マージ後処理スクリプト
@@ -20,6 +23,14 @@ shared-workflows/
 │   └── setup-labels.sh  # ラベル一括作成
 └── README.md
 ```
+
+## Reusable Workflows
+
+| ワークフロー | 概要 | 必須 Secrets |
+|---|---|---|
+| `claude.yml` | Claude Code Action（`@claude` メンション応答 + `auto-implement` 自動実装） | `CLAUDE_CODE_OAUTH_TOKEN`, `REPO_OWNER_PAT` |
+
+本リポにも caller（`claude-caller.yml`）を配置しており、`@claude` メンションで動作確認が可能。
 
 ## セットアップガイド
 

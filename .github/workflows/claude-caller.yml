@@ -1,0 +1,30 @@
+# Claude Code — Caller（本リポジトリ用）
+#
+# Reusable Workflow（claude.yml）の動作確認用 caller。
+# 同一リポ内のローカル参照を使用する。
+
+name: Claude Code (Caller)
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned, labeled]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude:
+    if: github.actor == 'becky3'
+    uses: ./.github/workflows/claude.yml
+    with:
+      allowed_user: becky3
+    secrets: inherit
