@@ -1,0 +1,75 @@
+# Post Merge — Reusable Workflow
+#
+# マージ後の自動処理。auto:merged ラベル付きPRのマージ完了時に実行。
+# 呼び出し側（caller）がトリガー（pull_request[closed]）を定義し、
+# このワークフローを workflow_call で呼び出す。
+#
+# コンセプト: 「YAMLはオーケストレーションのみ、ロジックはスクリプトに」
+# スクリプト: .shared/.github/scripts/post-merge/（shared-workflows から checkout）
+#
+# 呼び出し側の要件:
+#   - permissions: contents: read, pull-requests: write, issues: write, id-token: write
+#   - secrets: (SLACK_WEBHOOK_URL)
+#   - トリガーイベント: pull_request[closed]
+#
+# 処理内容:
+#   1. 全自動マージPRを auto:review-batch Issue にコメント記録
+#
+# エラーハンドリング方針:
+#   update-review-issue → 失敗時は warning で続行
+
+name: Post Merge
+
+on:
+  workflow_call:
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  post-merge:
+    # 自動マージされたPRのみ実行（手動マージは除外）
+    # merge-or-dryrun.sh がマージ前に auto:merged ラベルを付与する想定
+    if: >-
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'auto:merged')
+    runs-on: ubuntu-latest
+    steps:
+      # --- shared-workflows のスクリプト取得 ---
+      - name: Checkout shared-workflows (scripts)
+        uses: actions/checkout@v4
+        with:
+          repository: becky3/shared-workflows
+          path: .shared
+          fetch-depth: 1
+
+      - name: Update review issue
+        run: bash "$GITHUB_WORKSPACE/.shared/.github/scripts/post-merge/update-review-issue.sh"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+
+      # Slack通知（失敗時のみ）
+      - name: Slack notification
+        if: failure()
+        continue-on-error: true
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          mention: here
+          if_mention: failure
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+concurrency:
+  group: post-merge-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
