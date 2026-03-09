@@ -144,8 +144,9 @@ unresolved threads は GraphQL API で PR の `reviewThreads` から `isResolved
 |---|---|
 | Copilot レビューが来ない | タイムアウトで `auto:failed` 停止 |
 | 自動修正後も unresolved が残存 | `auto:failed` で停止 |
-| 禁止パターン検出 | 自動修正は続行するが、マージ判定（条件 6）でブロック |
-| GitHub API エラー | 即座に `auto:failed` で停止（リトライしない） |
+| 禁止パターン検出 | ワークフローは続行するが、マージ判定（条件 6）でブロック |
+| GitHub API 認証・権限エラー | 即座に `auto:failed` で停止（リトライしない） |
+| GitHub API 一時的障害 | 警告を出力し、次のポーリングサイクルで再試行 |
 | Copilot が同一 PR に複数回レビュー | 前提条件チェックで OPEN 状態を確認しガード |
 
 ### 障害復旧手順
