@@ -15,6 +15,8 @@ shared-workflows/
 │   └── scripts/         # ワークフローから呼ばれるスクリプト
 │       ├── auto-fix/    # Copilot Auto Fix 用スクリプト
 │       └── post-merge/  # マージ後処理スクリプト
+├── docs/
+│   └── specs/           # ワークフロー仕様書
 ├── examples/            # 各リポに配置するサンプル
 │   ├── caller-workflows/# caller YAML のサンプル
 │   ├── prompts/         # プロンプトテンプレートのサンプル
@@ -33,6 +35,14 @@ shared-workflows/
 | `post-merge.yml` | マージ後の自動処理（review-batch Issue 更新） | — |
 
 本リポにも caller（`claude-caller.yml`）を配置しており、`@claude` メンションで動作確認が可能。
+
+## 仕様書
+
+| 仕様書 | 概要 |
+|---|---|
+| [auto-progress](docs/specs/auto-progress.md) | 自動進行管理パイプライン（Issue → 実装 → レビュー → マージ） |
+| [claude-code-actions](docs/specs/claude-code-actions.md) | `@claude` メンションによる Claude Code 呼び出し |
+| [copilot-auto-fix](docs/specs/copilot-auto-fix.md) | Copilot レビュー指摘の自動修正 + マージ |
 
 ## セットアップガイド
 
