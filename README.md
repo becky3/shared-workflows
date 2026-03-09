@@ -44,6 +44,12 @@ shared-workflows/
 | [claude-code-actions](docs/specs/claude-code-actions.md) | `@claude` メンションによる Claude Code 呼び出し |
 | [copilot-auto-fix](docs/specs/copilot-auto-fix.md) | Copilot レビュー指摘の自動修正 + マージ |
 
+## 推奨ブランチ構成
+
+自動パイプラインは PR の base ブランチにマージする。マージ先が本番ブランチ（`main`）だと、自動マージが直接本番に入るリスクがある。
+
+git-flow のように開発統合ブランチ（`develop` 等）を分離し、自動マージ先を本番以外のブランチに限定することで、`main` の安定性を保護できる。
+
 ## セットアップガイド
 
 ### 1. Secrets の設定

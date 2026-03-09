@@ -131,7 +131,7 @@ unresolved threads は GraphQL API で PR の `reviewThreads` から `isResolved
 
 ### マージ結果
 
-- 条件クリア: `auto:merged` ラベル付与後、develop ブランチへマージ
+- 条件クリア: `auto:merged` ラベル付与後、PR の base ブランチへマージ
 - 条件未達: `auto:failed` ラベル付与
 
 ### エラー通知
