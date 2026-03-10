@@ -406,6 +406,7 @@ jobs:
         if: |
           steps.preconditions.outputs.skip != 'true'
           && steps.copilot-wait.outputs.copilot_reviewed == 'true'
+          && steps.forbidden-check.outputs.forbidden != 'true'
           && (
             steps.review-result.outputs.has_issues != 'true'
             || steps.recount.outputs.has_issues != 'true'
@@ -443,7 +444,7 @@ jobs:
         if: |
           steps.preconditions.outputs.skip != 'true'
           && steps.copilot-wait.outputs.copilot_reviewed == 'true'
-          && steps.ci-wait.outputs.ci_ready == 'true'
+          && (steps.ci-wait.outputs.ci_ready == 'true' || steps.forbidden-check.outputs.forbidden == 'true')
           && (
             steps.review-result.outputs.has_issues != 'true'
             || steps.recount.outputs.has_issues != 'true'

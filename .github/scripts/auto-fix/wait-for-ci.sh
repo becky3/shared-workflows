@@ -41,7 +41,11 @@ if ! validate_numeric "$TIMEOUT" "CI_CHECK_TIMEOUT"; then
   TIMEOUT=300
 fi
 
+# 最低1回はチェックする（TIMEOUT < POLL_INTERVAL の場合のガード）
 MAX_ATTEMPTS=$((TIMEOUT / POLL_INTERVAL))
+if [ "$MAX_ATTEMPTS" -lt 1 ]; then
+  MAX_ATTEMPTS=1
+fi
 EXCLUDE_NAME="${EXCLUDE_CHECK:-}"
 
 echo "Polling for CI check completion on PR #$PR_NUMBER (interval: ${POLL_INTERVAL}s, timeout: ${TIMEOUT}s, max attempts: $MAX_ATTEMPTS)"
