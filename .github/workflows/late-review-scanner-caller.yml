@@ -1,7 +1,7 @@
 # Late Review Scanner — Caller（本リポジトリ用）
 #
 # Reusable Workflow（late-review-scanner.yml）の caller。
-# 同一リポ内のローカル参照を使用する。
+# 同一リポ内のローカル参照を使用する（claude-caller.yml と同一パターン）。
 
 name: Late Review Scanner (Caller)
 
@@ -17,7 +17,7 @@ on:
 
 jobs:
   scan:
-    uses: becky3/shared-workflows/.github/workflows/late-review-scanner.yml@main
+    uses: ./.github/workflows/late-review-scanner.yml
     with:
       scan_hours: 24
     secrets: inherit

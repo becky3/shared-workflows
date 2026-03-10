@@ -78,6 +78,8 @@ jobs:
           bot_id: ${{ inputs.bot_id }}
           claude_args: |
             --model ${{ inputs.model }} --max-turns ${{ inputs.max_turns }} --dangerously-skip-permissions
+          # auto_progress_prompt が空文字の場合、claude-code-action は prompt を無視する
+          # （空文字は falsy のため <custom_instructions> ブロックは注入されない）
           prompt: ${{ inputs.auto_progress_prompt }}
           track_progress: true
           show_full_output: true
@@ -114,6 +116,8 @@ jobs:
           bot_id: ${{ inputs.bot_id }}
           claude_args: |
             --model ${{ inputs.model }} --max-turns ${{ inputs.max_turns }} --dangerously-skip-permissions
+          # auto_progress_prompt が空文字の場合、claude-code-action は prompt を無視する
+          # （空文字は falsy のため <custom_instructions> ブロックは注入されない）
           prompt: ${{ inputs.auto_progress_prompt }}
           track_progress: true
           show_full_output: true
