@@ -8,7 +8,7 @@
 #   GH_TOKEN                -- GitHub トークン（必須、env経由で gh CLI が自動参照）
 #   GH_REPO                 -- 対象リポジトリ owner/repo（必須）
 #   GITHUB_OUTPUT           -- GitHub Actions 出力ファイル（必須）
-#   COPILOT_REVIEW_TIMEOUT  -- 最大待機時間（秒）。デフォルト: 600
+#   COPILOT_REVIEW_TIMEOUT  -- 最大待機時間（秒）。デフォルト: 900
 #
 # 出力:
 #   copilot_reviewed=true|false（$GITHUB_OUTPUT 経由）
@@ -30,12 +30,12 @@ source "$SCRIPT_DIR/_common.sh"
 require_env PR_NUMBER GH_TOKEN GH_REPO GITHUB_OUTPUT
 validate_pr_number "$PR_NUMBER" "PR_NUMBER"
 
-TIMEOUT="${COPILOT_REVIEW_TIMEOUT:-600}"
+TIMEOUT="${COPILOT_REVIEW_TIMEOUT:-900}"
 POLL_INTERVAL=30
 
 if ! validate_numeric "$TIMEOUT" "COPILOT_REVIEW_TIMEOUT"; then
-  echo "::warning::Invalid COPILOT_REVIEW_TIMEOUT, using default 600"
-  TIMEOUT=600
+  echo "::warning::Invalid COPILOT_REVIEW_TIMEOUT, using default 900"
+  TIMEOUT=900
 fi
 
 MAX_ATTEMPTS=$((TIMEOUT / POLL_INTERVAL))

@@ -204,18 +204,20 @@ jobs:
 
       - name: Handle Copilot review timeout
         if: steps.preconditions.outputs.skip != 'true' && steps.copilot-wait.outputs.copilot_reviewed == 'false'
+        id: copilot-timeout
+        continue-on-error: true
         run: |
+          # マージパスへの続行を最優先で出力（API 障害でステップ失敗しても merge-path で拾えるよう continue-on-error と併用）
+          echo "review_skipped=true" >> "$GITHUB_OUTPUT"
+
           source "$GITHUB_WORKSPACE/.shared/.github/scripts/auto-fix/_common.sh"
           PR_NUMBER="${{ steps.pr-info.outputs.number }}"
 
-          gh_safe gh issue edit "$PR_NUMBER" --add-label "auto:failed"
-          gh_comment "$PR_NUMBER" "## copilot-auto-fix: Copilot レビュータイムアウト
+          gh_safe gh issue edit "$PR_NUMBER" --add-label "auto:review-skipped"
+          gh_comment "$PR_NUMBER" "## copilot-auto-fix: Copilot レビュースキップ
 
           Copilot のレビューが制限時間内に検知されませんでした。
-          \`auto:failed\` ラベルを付与して自動処理を停止します。
-
-          **次のアクション**: Copilot の状態を確認し、問題を解消してください。
-          対応完了後、\`auto:failed\` を除去し、Actions タブから「Copilot Auto Fix」の Run workflow で PR 番号を指定して再実行してください。
+          レビューをスキップしてマージ判定に進みます（事後レビュー late-review-scanner でカバー）。
 
           [Actions ログ](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         env:
@@ -381,19 +383,40 @@ jobs:
           GH_REPO: ${{ github.repository }}
 
       # --- マージ判定 ---
-      # 条件: (Copilot検知済み) AND (指摘なし OR 修正完了)
+      # 条件: (Copilot検知済み AND (指摘なし OR 修正完了)) OR レビュースキップ
       # 禁止パターンはマージ直前にチェックし、merge-check.sh 内で条件6として判定
       # 品質チェック（pytest/ruff/mypy/markdownlint）はエージェント内テストで担保済み（外部CIワークフロー不使用）
 
+      # マージパスへ進めるか判定（レビュー完了+問題解消、またはレビュースキップ）
+      - name: Check merge path eligibility
+        if: steps.preconditions.outputs.skip != 'true'
+        id: merge-path
+        run: |
+          set -euo pipefail
+          COPILOT_REVIEWED="${{ steps.copilot-wait.outputs.copilot_reviewed }}"
+          REVIEW_SKIPPED="${{ steps.copilot-timeout.outputs.review_skipped }}"
+          HAS_ISSUES="${{ steps.review-result.outputs.has_issues }}"
+          RECOUNT_HAS_ISSUES="${{ steps.recount.outputs.has_issues }}"
+
+          if [ "$REVIEW_SKIPPED" = "true" ]; then
+            echo "eligible=true" >> "$GITHUB_OUTPUT"
+            echo "Merge path: review skipped (timeout)"
+          elif [ "$COPILOT_REVIEWED" = "true" ]; then
+            if [ "$HAS_ISSUES" != "true" ] || [ "$RECOUNT_HAS_ISSUES" != "true" ]; then
+              echo "eligible=true" >> "$GITHUB_OUTPUT"
+              echo "Merge path: review completed, issues resolved"
+            else
+              echo "eligible=false" >> "$GITHUB_OUTPUT"
+              echo "Merge path: review completed, issues remain"
+            fi
+          else
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo "Merge path: not eligible"
+          fi
+
       # 禁止パターンチェック（マージ直前に実施。auto-fix が禁止ファイルの変更を消した可能性があるため）
       - name: Check forbidden patterns
-        if: |
-          steps.preconditions.outputs.skip != 'true'
-          && steps.copilot-wait.outputs.copilot_reviewed == 'true'
-          && (
-            steps.review-result.outputs.has_issues != 'true'
-            || steps.recount.outputs.has_issues != 'true'
-          )
+        if: steps.merge-path.outputs.eligible == 'true'
         id: forbidden-check
         run: bash "$GITHUB_WORKSPACE/.shared/.github/scripts/auto-fix/check-forbidden.sh"
         env:
@@ -403,14 +426,7 @@ jobs:
           FORBIDDEN_PATTERNS: ${{ inputs.forbidden_patterns }}
 
       - name: Wait for CI checks
-        if: |
-          steps.preconditions.outputs.skip != 'true'
-          && steps.copilot-wait.outputs.copilot_reviewed == 'true'
-          && steps.forbidden-check.outputs.forbidden != 'true'
-          && (
-            steps.review-result.outputs.has_issues != 'true'
-            || steps.recount.outputs.has_issues != 'true'
-          )
+        if: steps.merge-path.outputs.eligible == 'true' && steps.forbidden-check.outputs.forbidden != 'true'
         id: ci-wait
         run: bash "$GITHUB_WORKSPACE/.shared/.github/scripts/auto-fix/wait-for-ci.sh"
         env:
@@ -442,13 +458,8 @@ jobs:
 
       - name: Merge check
         if: |
-          steps.preconditions.outputs.skip != 'true'
-          && steps.copilot-wait.outputs.copilot_reviewed == 'true'
+          steps.merge-path.outputs.eligible == 'true'
           && (steps.ci-wait.outputs.ci_ready == 'true' || steps.forbidden-check.outputs.forbidden == 'true')
-          && (
-            steps.review-result.outputs.has_issues != 'true'
-            || steps.recount.outputs.has_issues != 'true'
-          )
         id: merge-check
         run: bash "$GITHUB_WORKSPACE/.shared/.github/scripts/auto-fix/merge-check.sh"
         env:
