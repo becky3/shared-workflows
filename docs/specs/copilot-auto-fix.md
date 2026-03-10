@@ -64,7 +64,10 @@ flowchart TD
     N --> N2{unresolved 再カウント}
     N2 -->|残存あり| P[auto:failed 付与]
     N2 -->|0| L0
-    L0 --> L{マージ判定<br/>6条件チェック}
+    L0 --> CI[CI 完了待機<br/>ポーリング]
+    CI --> CI2{CI 完了?}
+    CI2 -->|タイムアウト| P[auto:failed 付与]
+    CI2 -->|完了| L{マージ判定<br/>6条件チェック}
     L -->|条件クリア| L2[auto:merged 付与]
     L2 --> O[自動マージ]
     L -->|条件未達| P
@@ -98,14 +101,24 @@ REST API で PR のレビュー一覧を固定間隔でポーリングし、Copi
 
 | 条件 | アクション |
 |---|---|
-| unresolved == 0 | 禁止パターンチェック → マージ判定 |
-| unresolved > 0 | 自動修正（テスト → 失敗時は再修正） → commit & push → 判断済みスレッド resolve → unresolved 再カウント → 禁止パターンチェック → マージ判定 |
+| unresolved == 0 | 禁止パターンチェック → CI 完了待機 → マージ判定 |
+| unresolved > 0 | 自動修正（テスト → 失敗時は再修正） → commit & push → 判断済みスレッド resolve → unresolved 再カウント → 禁止パターンチェック → CI 完了待機 → マージ判定 |
 
 unresolved threads は GraphQL API で PR の `reviewThreads` から `isResolved == false` のスレッド数をカウントする。
 
 ### 禁止パターンチェック
 
-マージ判定の直前に 1 回だけ実行する。自動修正が禁止ファイルの変更を取り消す可能性があるため、チェックはマージ直前に行う。
+マージ判定に先立ち 1 回だけ実行する。自動修正が禁止ファイルの変更を取り消す可能性があるため、チェックは自動修正後に行う。
+
+### CI 完了待機
+
+禁止パターンチェック後、マージ判定の前に CI チェックの完了をポーリングで待機する。auto-fix による push が新しい CI ワークフローを起動するため、CI が完了する前にマージ判定を行うと実行中のチェックが失敗と誤判定される。
+
+- `statusCheckRollup` を定期チェックし、全チェックが完了状態になるまで待機する
+- 自ワークフロー（`exclude_check` 入力で指定）は除外する
+- タイムアウトは Actions variable（`CI_CHECK_TIMEOUT`）で設定可能
+- タイムアウト時は `auto:failed` ラベルを付与して停止する
+- CI が設定されていない場合（`statusCheckRollup` が空）はスキップする（マージ判定の条件3も自動 PASS となる）
 
 ### マージ判定
 
@@ -117,6 +130,8 @@ unresolved threads は GraphQL API で PR の `reviewThreads` から `isResolved
 4. コンフリクトなし
 5. `auto:failed` ラベルなし
 6. 禁止パターンなし
+
+条件3の判定では、CheckRun（`status` / `conclusion`）と StatusContext（`state`）を区別して評価する。実行中（IN_PROGRESS / PENDING）のチェックは CI 完了待機ステップで解消済みのため、マージ判定時点では完了済みチェックのみが対象となる。
 
 ## 出力
 
@@ -143,6 +158,7 @@ unresolved threads は GraphQL API で PR の `reviewThreads` から `isResolved
 | ケース | 振る舞い |
 |---|---|
 | Copilot レビューが来ない | タイムアウトで `auto:failed` 停止 |
+| CI チェックが完了しない | CI 待機タイムアウトで `auto:failed` 停止 |
 | 自動修正後も unresolved が残存 | `auto:failed` で停止 |
 | 禁止パターン検出 | ワークフローは続行するが、マージ判定（条件 6）でブロック |
 | GitHub API 認証・権限エラー | 即座に `auto:failed` で停止（リトライしない） |

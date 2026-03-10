@@ -402,10 +402,48 @@ jobs:
           PR_NUMBER: ${{ steps.pr-info.outputs.number }}
           FORBIDDEN_PATTERNS: ${{ inputs.forbidden_patterns }}
 
+      - name: Wait for CI checks
+        if: |
+          steps.preconditions.outputs.skip != 'true'
+          && steps.copilot-wait.outputs.copilot_reviewed == 'true'
+          && (
+            steps.review-result.outputs.has_issues != 'true'
+            || steps.recount.outputs.has_issues != 'true'
+          )
+        id: ci-wait
+        run: bash "$GITHUB_WORKSPACE/.shared/.github/scripts/auto-fix/wait-for-ci.sh"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr-info.outputs.number }}
+          EXCLUDE_CHECK: ${{ inputs.exclude_check }}
+          CI_CHECK_TIMEOUT: ${{ vars.CI_CHECK_TIMEOUT }}
+
+      - name: Handle CI check timeout
+        if: steps.ci-wait.outputs.ci_ready == 'false'
+        run: |
+          source "$GITHUB_WORKSPACE/.shared/.github/scripts/auto-fix/_common.sh"
+          PR_NUMBER="${{ steps.pr-info.outputs.number }}"
+
+          gh_safe gh issue edit "$PR_NUMBER" --add-label "auto:failed"
+          gh_comment "$PR_NUMBER" "## copilot-auto-fix: CI チェックタイムアウト
+
+          CI チェックが制限時間内に完了しませんでした。
+          \`auto:failed\` ラベルを付与して自動処理を停止します。
+
+          **次のアクション**: CI の状態を確認し、問題を解消してください。
+          対応完了後、\`auto:failed\` を除去し、Actions タブから「Copilot Auto Fix」の Run workflow で PR 番号を指定して再実行してください。
+
+          [Actions ログ](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+
       - name: Merge check
         if: |
           steps.preconditions.outputs.skip != 'true'
           && steps.copilot-wait.outputs.copilot_reviewed == 'true'
+          && steps.ci-wait.outputs.ci_ready == 'true'
           && (
             steps.review-result.outputs.has_issues != 'true'
             || steps.recount.outputs.has_issues != 'true'

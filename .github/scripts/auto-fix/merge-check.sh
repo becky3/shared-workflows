@@ -48,17 +48,38 @@ echo "✅ Condition 2: No review issues"
 # （自ワークフローの実行中チェックを除外するため。copilot-auto-fix.yml から呼ばれる場合に使用）
 # gh pr view --jq は --arg 非対応のため、一時環境変数 + env オブジェクト経由で jq に渡す
 EXCLUDE_NAME="${EXCLUDE_CHECK:-}"
+# CI チェックの状態を分類: 失敗・実行中・合計をそれぞれカウント
+# CI 完了待機ステップ（wait-for-ci.sh）を経由していれば実行中は 0 のはず
+# jq 内の $total, $pending, $failed は jq 変数（bash 変数ではない）
+# shellcheck disable=SC2016
 if ! CI_RESULT=$(EXCLUDE_NAME="$EXCLUDE_NAME" gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '
   if .statusCheckRollup == null then
     "no_checks"
   else
-    ([.statusCheckRollup[] |
-      select(if env.EXCLUDE_NAME != "" then (.name | contains(env.EXCLUDE_NAME)) | not else true end) |
-      select(
-        (has("state") and .state != "SUCCESS" and .state != "NEUTRAL") or
-        (has("conclusion") and .conclusion != "SUCCESS" and .conclusion != "NEUTRAL" and .conclusion != "SKIPPED")
-      )
-    ] | length | tostring)
+    (
+      [.statusCheckRollup[] |
+        select(if env.EXCLUDE_NAME != "" then (.name | contains(env.EXCLUDE_NAME)) | not else true end)
+      ] | length
+    ) as $total |
+    (
+      [.statusCheckRollup[] |
+        select(if env.EXCLUDE_NAME != "" then (.name | contains(env.EXCLUDE_NAME)) | not else true end) |
+        select(
+          (has("status") and .status != "COMPLETED") or
+          (has("state") and (.state == "PENDING" or .state == "EXPECTED"))
+        )
+      ] | length
+    ) as $pending |
+    (
+      [.statusCheckRollup[] |
+        select(if env.EXCLUDE_NAME != "" then (.name | contains(env.EXCLUDE_NAME)) | not else true end) |
+        select(
+          (has("status") and .status == "COMPLETED" and .conclusion != "SUCCESS" and .conclusion != "NEUTRAL" and .conclusion != "SKIPPED") or
+          (has("state") and .state != "SUCCESS" and .state != "NEUTRAL" and .state != "PENDING" and .state != "EXPECTED")
+        )
+      ] | length
+    ) as $failed |
+    "\($failed):\($pending):\($total)"
   end
 ' 2>&1); then
   MERGE_READY=false
@@ -67,12 +88,23 @@ if ! CI_RESULT=$(EXCLUDE_NAME="$EXCLUDE_NAME" gh pr view "$PR_NUMBER" --json sta
   echo "❌ Condition 3: API error (not CI failure)"
 elif [ "$CI_RESULT" = "no_checks" ]; then
   echo "✅ Condition 3: No CI checks configured"
-elif [ "$CI_RESULT" = "0" ]; then
-  echo "✅ Condition 3: CI checks passed"
 else
-  MERGE_READY=false
-  REASONS="${REASONS}\n- ❌ CI checks not all passing ($CI_RESULT failing)"
-  echo "❌ Condition 3: CI checks failed"
+  FAILED="${CI_RESULT%%:*}"
+  REST="${CI_RESULT#*:}"
+  PENDING="${REST%%:*}"
+  TOTAL="${REST#*:}"
+
+  if [ "$FAILED" = "0" ] && [ "$PENDING" = "0" ]; then
+    echo "✅ Condition 3: CI checks passed ($TOTAL check(s))"
+  elif [ "$PENDING" != "0" ]; then
+    MERGE_READY=false
+    REASONS="${REASONS}\n- ❌ CI checks still in progress ($PENDING pending, $FAILED failed out of $TOTAL)"
+    echo "❌ Condition 3: CI checks still in progress ($PENDING pending)"
+  else
+    MERGE_READY=false
+    REASONS="${REASONS}\n- ❌ CI checks failed ($FAILED failed out of $TOTAL)"
+    echo "❌ Condition 3: CI checks failed ($FAILED failed)"
+  fi
 fi
 
 # 条件4: コンフリクトなし（方針: 一時的API障害 → 安全側に倒してマージ拒否）
