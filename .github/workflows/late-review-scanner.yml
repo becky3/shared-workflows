@@ -1,0 +1,74 @@
+# Late Review Scanner — Reusable Workflow
+#
+# マージ済み PR の未解決レビュースレッドを定期検出し、集約 Issue に記録。
+# 呼び出し側（caller）がトリガー（schedule / workflow_dispatch）を定義し、
+# このワークフローを workflow_call で呼び出す。
+#
+# コンセプト: 「マージ後の事後指摘を自動で拾い、Issue として可視化する」
+# スクリプト: .shared/.github/scripts/late-review-scanner/（shared-workflows から checkout）
+#
+# 呼び出し側の要件:
+#   - permissions: contents: read, pull-requests: write, issues: write
+#   - secrets: なし（GITHUB_TOKEN で動作）
+#   - トリガーイベント: schedule, workflow_dispatch
+#
+# エラーハンドリング方針:
+#   集約Issue作成失敗        → exit 1（必須リソース）
+#   PR個別のAPI障害          → warning で次のPRに継続
+#   スレッド resolve 失敗     → warning で続行（次回再検出）
+#   認証/権限エラー           → exit 1（即停止）
+
+name: Late Review Scanner
+
+on:
+  workflow_call:
+    inputs:
+      scan_hours:
+        description: 'How many hours back to scan for merged PRs'
+        required: false
+        type: number
+        default: 24
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout shared-workflows (scripts)
+        uses: actions/checkout@v4
+        with:
+          repository: becky3/shared-workflows
+          path: .shared
+          fetch-depth: 1
+
+      - name: Scan for unresolved review threads
+        run: bash "$GITHUB_WORKSPACE/.shared/.github/scripts/late-review-scanner/scan.sh"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SCAN_HOURS: ${{ inputs.scan_hours }}
+
+      # Slack通知（失敗時のみ）
+      - name: Slack notification
+        if: failure()
+        continue-on-error: true
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          mention: here
+          if_mention: failure
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+concurrency:
+  group: late-review-scanner-${{ github.repository }}
+  cancel-in-progress: true

@@ -24,6 +24,7 @@ LABELS=(
   "auto:merged|6F42C1|自動マージ済み"
   "auto:failed|D93F0B|自動処理失敗（要手動対応）"
   "auto:review-batch|FBCA04|自動マージレビュー Issue"
+  "auto:late-review|C5DEF5|事後レビュー指摘の集約 Issue"
 )
 
 echo "Creating labels for $REPO..."

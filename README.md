@@ -14,7 +14,8 @@ shared-workflows/
 │   │   └── ci.yml              # CI: shellcheck + actionlint
 │   └── scripts/         # ワークフローから呼ばれるスクリプト
 │       ├── auto-fix/    # Copilot Auto Fix 用スクリプト
-│       └── post-merge/  # マージ後処理スクリプト
+│       ├── post-merge/  # マージ後処理スクリプト
+│       └── late-review-scanner/  # 事後レビュースキャナー
 ├── docs/
 │   └── specs/           # ワークフロー仕様書
 ├── examples/            # 各リポに配置するサンプル
@@ -33,6 +34,7 @@ shared-workflows/
 | `claude.yml` | Claude Code Action（`@claude` メンション応答 + `auto-implement` 自動実装） | `CLAUDE_CODE_OAUTH_TOKEN`, `REPO_OWNER_PAT` |
 | `copilot-auto-fix.yml` | Copilot レビュー指摘の自動修正 + マージ | `CLAUDE_CODE_OAUTH_TOKEN`, `REPO_OWNER_PAT` |
 | `post-merge.yml` | マージ後の自動処理（review-batch Issue 更新） | — |
+| `late-review-scanner.yml` | マージ済み PR の事後レビュー指摘を検出・集約 | — |
 
 本リポにも caller（`claude-caller.yml`）を配置しており、`@claude` メンションで動作確認が可能。
 
@@ -43,6 +45,7 @@ shared-workflows/
 | [auto-progress](docs/specs/auto-progress.md) | 自動進行管理パイプライン（Issue → 実装 → レビュー → マージ） |
 | [claude-code-actions](docs/specs/claude-code-actions.md) | `@claude` メンションによる Claude Code 呼び出し |
 | [copilot-auto-fix](docs/specs/copilot-auto-fix.md) | Copilot レビュー指摘の自動修正 + マージ |
+| [late-review-scanner](docs/specs/late-review-scanner.md) | マージ済み PR の事後レビュー指摘の定期検出・集約 |
 
 ## 推奨ブランチ構成
 
@@ -141,6 +144,7 @@ bash scripts/setup-labels.sh owner/repo
 | `claude.yml` | `.github/workflows/claude.yml` | Claude Code Action（メンション + auto-implement） |
 | `copilot-auto-fix.yml` | `.github/workflows/copilot-auto-fix.yml` | Copilot レビュー自動修正 + マージ |
 | `post-merge.yml` | `.github/workflows/post-merge.yml` | マージ後の review-batch Issue 更新 |
+| `late-review-scanner.yml` | `.github/workflows/late-review-scanner.yml` | 事後レビュー指摘の検出・集約 |
 
 ### 5. プロンプト・設定ファイルの配置
 

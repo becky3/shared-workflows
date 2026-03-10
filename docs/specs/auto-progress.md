@@ -117,6 +117,7 @@ flowchart TD
 | `auto:merged` | 自動マージ済みマーカー（post-merge.yml の発火条件） | copilot-auto-fix.yml |
 | `auto:failed` | 自動処理の失敗・停止（緊急停止にも使用） | 各ワークフロー or 管理者 |
 | `auto:review-batch` | 自動マージレビューバッチ Issue | post-merge.yml |
+| `auto:late-review` | 事後レビュー指摘の集約 Issue マーカー | late-review-scanner.yml |
 
 **命名規則**: `auto-implement` = Issue 側（ユーザーが手動付与）、`auto:*` = PR 側（ワークフローが自動管理）
 
@@ -157,6 +158,7 @@ stateDiagram-v2
 | `claude.yml` | `issues[labeled]` | `auto-implement` ラベルで自動実装開始 |
 | `copilot-auto-fix.yml` | `pull_request[opened]` + `workflow_dispatch` | Copilot レビュー検知 + 自動修正 + マージ |
 | `post-merge.yml` | `pull_request[closed]` | マージ後の全 PR レビュー記録 |
+| `late-review-scanner.yml` | `schedule` + `workflow_dispatch` | マージ済み PR の事後レビュー指摘を検出・集約 |
 
 caller が渡すリポジトリ固有の設定:
 
