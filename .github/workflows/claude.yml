@@ -39,7 +39,7 @@ on:
         type: string
         default: '209825114'
       auto_progress_prompt:
-        description: 'System prompt text appended via --append-system-prompt (empty to skip)'
+        description: 'Custom instructions injected via prompt input as <custom_instructions> (empty to skip)'
         required: false
         type: string
         default: ''
@@ -78,7 +78,8 @@ jobs:
           bot_id: ${{ inputs.bot_id }}
           claude_args: |
             --model ${{ inputs.model }} --max-turns ${{ inputs.max_turns }} --dangerously-skip-permissions
-            ${{ inputs.auto_progress_prompt != '' && format('--append-system-prompt {0}', toJSON(inputs.auto_progress_prompt)) || '' }}
+          prompt: ${{ inputs.auto_progress_prompt }}
+          track_progress: true
           show_full_output: true
 
   # auto-implement ラベルによる自動実装トリガー
@@ -117,8 +118,6 @@ jobs:
           track_progress: true
           show_full_output: true
           label_trigger: "auto-implement"
-        env:
-          APPEND_SYSTEM_PROMPT: ${{ inputs.auto_progress_prompt }}
 
       # auto:pipeline ラベルを付与（検索・フィルタ用。ワークフロー制御には使用しない）
       # ワークフロー制御は auto/ ブランチプレフィックスで判定（branch_prefix パラメータ）
