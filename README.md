@@ -47,7 +47,17 @@ shared-workflows/
 | [copilot-auto-fix](docs/specs/copilot-auto-fix.md) | Copilot レビュー指摘の自動修正 + マージ |
 | [late-review-scanner](docs/specs/late-review-scanner.md) | マージ済み PR の事後レビュー指摘の定期検出・集約 |
 
-## 推奨ブランチ構成
+## ブランチ運用
+
+### 本リポジトリ
+
+本リポジトリは **main ブランチのみ**で運用する（develop ブランチは使用しない）。
+
+- 作業ブランチ: `feature/*`, `bugfix/*` を main から作成
+- PR の base: `main`
+- PR マージで main に反映される。呼び出し側は `@main` で参照しているため即時反映
+
+### 呼び出し側リポジトリへの推奨
 
 自動パイプラインは PR の base ブランチにマージする。マージ先が本番ブランチ（`main`）だと、自動マージが直接本番に入るリスクがある。
 
@@ -107,7 +117,7 @@ GitHub Personal Access Token。ワークフロー連鎖（GITHUB_TOKEN で作成
 | Variable | デフォルト | 説明 |
 |----------|-----------|------|
 | `AUTO_MERGE_ENABLED` | `false` | `true` で自動マージ有効化（それ以外はドライラン） |
-| `COPILOT_REVIEW_TIMEOUT` | `600` | Copilot レビュー待機の最大秒数 |
+| `COPILOT_REVIEW_TIMEOUT` | `900` | Copilot レビュー待機の最大秒数 |
 
 ### 3. ラベルの作成
 
