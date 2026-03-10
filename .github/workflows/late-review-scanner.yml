@@ -28,9 +28,6 @@ on:
         required: false
         type: number
         default: 24
-    secrets:
-      SLACK_WEBHOOK_URL:
-        required: false
 
 permissions:
   contents: read
@@ -55,19 +52,6 @@ jobs:
           GH_REPO: ${{ github.repository }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           SCAN_HOURS: ${{ inputs.scan_hours }}
-
-      # Slack通知（失敗時のみ）
-      - name: Slack notification
-        if: failure()
-        continue-on-error: true
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow
-          mention: here
-          if_mention: failure
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
 concurrency:
   group: late-review-scanner-${{ github.repository }}
