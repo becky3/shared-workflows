@@ -22,6 +22,7 @@ LABELS=(
   "auto:pipeline|1D76DB|自動パイプライン処理中"
   "auto:copilot-reviewed|BFD4F2|Copilot レビュー完了"
   "auto:merged|6F42C1|自動マージ済み"
+  "auto:review-skipped|FEF2C0|Copilot レビュースキップ（タイムアウト）"
   "auto:failed|D93F0B|自動処理失敗（要手動対応）"
   "auto:review-batch|FBCA04|自動マージレビュー Issue"
   "auto:late-review|C5DEF5|事後レビュー指摘の集約 Issue"
