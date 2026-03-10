@@ -113,6 +113,8 @@ jobs:
           bot_id: ${{ inputs.bot_id }}
           claude_args: |
             --model ${{ inputs.model }} --max-turns ${{ inputs.max_turns }} --dangerously-skip-permissions
+          prompt: ${{ inputs.auto_progress_prompt }}
+          track_progress: true
           show_full_output: true
           label_trigger: "auto-implement"
         env:
