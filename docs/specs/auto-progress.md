@@ -199,7 +199,12 @@ caller が `forbidden_patterns` 入力で指定したファイルパターンに
 
 ### 第4層: concurrency グループ
 
-PR 番号ごとの concurrency グループで同じ PR に対する同時実行を防止する。進行中のジョブはキャンセルしない。
+ワークフローごとに concurrency グループで同時実行を制御する。進行中のジョブはキャンセルしない。
+
+| ワークフロー | グループキー | 並列実行 |
+|---|---|---|
+| auto-implement | Issue 番号 | 異なる Issue 間で可能 |
+| copilot-auto-fix | PR 番号 | 異なる PR 間で可能 |
 
 ### 第5層: マージ前6条件チェック
 
@@ -249,7 +254,7 @@ flowchart TD
 | 実装が長時間 | `--max-turns` で間接制御。タイムアウト時に停止 |
 | API/権限エラー | 即座に停止。エラー内容を通知 |
 | コンフリクト | 既存の `@claude` フローで手動対応 |
-| 同時実行 | concurrency グループで防止 |
+| 同一 Issue の重複実行 | Issue 番号ごとの concurrency グループで防止 |
 
 ### 管理者の復旧手順
 

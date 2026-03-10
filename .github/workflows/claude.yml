@@ -84,6 +84,12 @@ jobs:
 
   # auto-implement ラベルによる自動実装トリガー
   claude-auto-implement:
+    # Issue 番号ごとの concurrency グループ:
+    # - 異なる Issue の auto-implement は並列実行可能
+    # - 同一 Issue の重複実行は防止（進行中のジョブはキャンセルしない）
+    concurrency:
+      group: claude-auto-implement-${{ github.event.issue.number }}
+      cancel-in-progress: false
     if: |
       github.actor == inputs.allowed_user &&
       github.event_name == 'issues' &&
