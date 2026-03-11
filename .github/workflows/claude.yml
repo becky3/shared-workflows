@@ -78,7 +78,7 @@ jobs:
           bot_id: ${{ inputs.bot_id }}
           claude_args: |
             --model ${{ inputs.model }} --max-turns ${{ inputs.max_turns }} --dangerously-skip-permissions
-          prompt: ${{ inputs.auto_progress_prompt != '' && inputs.auto_progress_prompt || '' }}
+          prompt: ${{ inputs.auto_progress_prompt }}
           track_progress: true
           show_full_output: true
 
@@ -123,7 +123,7 @@ jobs:
           # gh コマンドを許可: PR作成・Issue操作に必要
           # デフォルトの allowed_tools には git コマンドのみで gh が含まれない
           allowed_tools: "Bash(gh:*)"
-          prompt: ${{ inputs.auto_progress_prompt != '' && inputs.auto_progress_prompt || '' }}
+          prompt: ${{ inputs.auto_progress_prompt }}
           track_progress: true
           show_full_output: true
           label_trigger: "auto-implement"
