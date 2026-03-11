@@ -45,6 +45,7 @@ gh api graphql -f query="
       }
     }
   }
+}
 " --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .comments.nodes[0] | {author: .author.login, path, line, body}'
 ```
 
