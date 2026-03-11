@@ -26,6 +26,13 @@ require_env PR_NUMBER GITHUB_OUTPUT
 MERGE_READY=true
 REASONS=""
 
+# ラベル一覧を事前取得（条件2・条件5で共用）
+LABELS_FETCHED=true
+if ! LABELS=$(gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name' 2>&1); then
+  LABELS_FETCHED=false
+  echo "::warning::Failed to retrieve labels (API error): $LABELS"
+fi
+
 # 条件1: PR が OPEN 状態（マージ済み・クローズ済みの PR はスキップ）
 if ! PR_STATE=$(gh pr view "$PR_NUMBER" --json state --jq '.state' 2>&1); then
   MERGE_READY=false
@@ -41,7 +48,12 @@ else
 fi
 
 # 条件2: レビュー指摘ゼロ（既に has_issues=false で確認済み）
-echo "✅ Condition 2: No review issues"
+# auto:review-skipped ラベルがある場合はレビュー自体が行われていないためスキップ表示
+if [ "$LABELS_FETCHED" = "true" ] && echo "$LABELS" | grep -q "^auto:review-skipped$"; then
+  echo "⏭️ Condition 2: Review skipped (timeout) — covered by late-review-scanner"
+else
+  echo "✅ Condition 2: No review issues"
+fi
 
 # 条件3: CI全チェック通過（GitHub API の statusCheckRollup を使用）
 # EXCLUDE_CHECK が設定されている場合、そのチェック名を除外する
@@ -122,10 +134,9 @@ else
 fi
 
 # 条件5: auto:failed ラベルなし（方針: 一時的API障害 → 安全側に倒してマージ拒否）
-if ! LABELS=$(gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name' 2>&1); then
+if [ "$LABELS_FETCHED" != "true" ]; then
   MERGE_READY=false
   REASONS="${REASONS}\n- ❌ GitHub API error: Cannot verify labels"
-  echo "::warning::Failed to retrieve labels (API error): $LABELS"
   echo "❌ Condition 5: API error (not label issue)"
 elif echo "$LABELS" | grep -q "^auto:failed$"; then
   MERGE_READY=false

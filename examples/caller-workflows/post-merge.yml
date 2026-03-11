@@ -20,4 +20,3 @@ on:
 jobs:
   post-merge:
     uses: becky3/shared-workflows/.github/workflows/post-merge.yml@main
-    secrets: inherit
