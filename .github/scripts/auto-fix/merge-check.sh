@@ -7,6 +7,7 @@
 #   GH_TOKEN        — GitHub トークン（env経由で gh CLI が自動参照）
 #   GH_REPO         — 対象リポジトリ（owner/repo）
 #   EXCLUDE_CHECK   — （任意）CI チェック除外名。自ワークフローの自己参照防止用
+#   REVIEW_SKIPPED  — （任意）"true" の場合、レビュースキップ（タイムアウト）。条件2を免除
 #   FORBIDDEN_DETECTED — （任意）禁止パターン検出結果。"true" の場合マージ拒否
 #   FORBIDDEN_FILES  — （任意）禁止パターン該当ファイル一覧（multiline）。REASONS に含める
 #
@@ -41,7 +42,12 @@ else
 fi
 
 # 条件2: レビュー指摘ゼロ（既に has_issues=false で確認済み）
-echo "✅ Condition 2: No review issues"
+# REVIEW_SKIPPED=true の場合はレビュー自体が行われていないため免除
+if [ "${REVIEW_SKIPPED:-}" = "true" ]; then
+  echo "⏭️ Condition 2: Review skipped (timeout) — waived"
+else
+  echo "✅ Condition 2: No review issues"
+fi
 
 # 条件3: CI全チェック通過（GitHub API の statusCheckRollup を使用）
 # EXCLUDE_CHECK が設定されている場合、そのチェック名を除外する
