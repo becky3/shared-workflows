@@ -41,8 +41,7 @@ else
   echo "✅ Condition 1: PR is OPEN"
 fi
 
-# 条件2: レビュー指摘ゼロ（既に has_issues=false で確認済み）
-# REVIEW_SKIPPED=true の場合はレビュー自体が行われていないため免除
+# 条件2: レビュー指摘ゼロ（上流で review 結果を判定済み。REVIEW_SKIPPED=true の場合は免除）
 if [ "${REVIEW_SKIPPED:-}" = "true" ]; then
   echo "⏭️ Condition 2: Review skipped (timeout) — waived"
 else

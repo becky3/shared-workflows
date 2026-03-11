@@ -206,7 +206,7 @@ caller が `forbidden_patterns` 入力で指定したファイルパターンに
 | ジョブ | concurrency グループキー | 並列実行 |
 |---|---|---|
 | claude-auto-implement ジョブ (`.github/workflows/claude.yml`) | `claude-auto-implement-${{ github.event.issue.number }}` | 異なる Issue 間で可能 |
-| copilot-auto-fix ジョブ | PR 番号 | 異なる PR 間で可能 |
+| copilot-auto-fix ジョブ (`.github/workflows/copilot-auto-fix.yml`) | `copilot-auto-fix-pr-${{ github.event.pull_request.number \|\| github.event.inputs.pr_number }}` | 異なる PR 間で可能 |
 
 ### 第5層: マージ前6条件チェック
 
