@@ -32,7 +32,7 @@ jobs:
       allowed_user: "<YOUR_USERNAME>"
       # model: "claude-opus-4-6"       # default
       # max_turns: 100                  # default
-      # auto_progress_prompt: "GA環境専用ルールが ..."
+      auto_progress_prompt: "GA環境専用ルールが .claude/CLAUDE-auto-progress.md にあります。このファイルを必ず読んでから作業を開始してください。ファイルが見つからない・読めない場合は、その旨をIssue/PRにコメントして作業を中断してください。"
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       REPO_OWNER_PAT: ${{ secrets.REPO_OWNER_PAT }}
