@@ -164,7 +164,9 @@ caller が渡すリポジトリ固有の設定:
 
 - **禁止パターン**: 自動マージをブロックするファイルパターン（caller の `forbidden_patterns` 入力）
 - **プロンプトテンプレート**: レビュー指摘対応プロンプト（caller リポの `.github/prompts/` に配置）
-- **GA 環境ルール**: 自動実装時のカスタム指示（caller の `auto_progress_prompt` 入力。`prompt` input 経由で `<custom_instructions>` として注入）
+- **GA 環境ルール**: 自動実装時のカスタム指示。以下の2つの方式で注入でき、併用も可能:
+  - **ファイル配置方式（推奨）**: caller リポの `.claude/CLAUDE-auto-progress.md` に配置。Claude Code がプロジェクト指示として自動読み込みする
+  - **input 方式**: caller の `auto_progress_prompt` 入力で渡す。`prompt` input 経由で `<custom_instructions>` として注入
 
 ### レビュー方式
 

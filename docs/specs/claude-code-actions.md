@@ -92,7 +92,7 @@ Caller から Reusable Workflow に渡す入力パラメータ:
 | `max_turns` | No | 最大ターン数 |
 | `bot_name` | No | Bot 表示名 |
 | `bot_id` | No | Bot ID |
-| `auto_progress_prompt` | No | GA 環境用のカスタム指示。`prompt` input 経由で `<custom_instructions>` として注入（空文字列で省略） |
+| `auto_progress_prompt` | No | GA 環境用のカスタム指示。`prompt` input 経由で `<custom_instructions>` として注入（空文字列で省略）。`.claude/CLAUDE-auto-progress.md` 配置方式との併用可 |
 
 ### シークレット
 
