@@ -2,7 +2,7 @@
 # setup.sh — 呼び出し側リポジトリの auto-implement パイプラインを一括セットアップ
 #
 # 使い方:
-#   ./scripts/setup.sh <owner/repo> <github_username> [--force]
+#   ./scripts/setup.sh <owner/repo> <github_username> [options]
 #
 # 処理内容:
 #   1. ラベル一括作成
@@ -12,7 +12,8 @@
 #   5. Secrets 設定状況の検証
 #
 # オプション:
-#   --force  既存ファイルを上書きする（デフォルトはスキップ）
+#   --force              既存ファイルを上書きする（デフォルトはスキップ）
+#   --target-dir <path>  呼び出し側リポジトリのローカルパスを明示指定
 
 set -euo pipefail
 
@@ -21,10 +22,22 @@ set -euo pipefail
 FORCE=false
 REPO=""
 USERNAME=""
+TARGET_DIR=""
 
-for arg in "$@"; do
+args=("$@")
+i=0
+while [ $i -lt ${#args[@]} ]; do
+  arg="${args[$i]}"
   case "$arg" in
     --force) FORCE=true ;;
+    --target-dir)
+      i=$((i + 1))
+      if [ $i -ge ${#args[@]} ]; then
+        echo "Error: --target-dir requires an argument"
+        exit 1
+      fi
+      TARGET_DIR="${args[$i]}"
+      ;;
     *)
       if [ -z "$REPO" ]; then
         REPO="$arg"
@@ -32,22 +45,23 @@ for arg in "$@"; do
         USERNAME="$arg"
       else
         echo "Error: unexpected argument '$arg'"
-        echo "Usage: $0 <owner/repo> <github_username> [--force]"
+        echo "Usage: $0 <owner/repo> <github_username> [--force] [--target-dir <path>]"
         echo "Example: $0 becky3/ai-assistant becky3"
         exit 1
       fi
       ;;
   esac
+  i=$((i + 1))
 done
 
 if [ -z "$REPO" ] || [ -z "$USERNAME" ]; then
-  echo "Usage: $0 <owner/repo> <github_username> [--force]"
+  echo "Usage: $0 <owner/repo> <github_username> [--force] [--target-dir <path>]"
   echo "Example: $0 becky3/ai-assistant becky3"
   exit 1
 fi
 
-# owner/repo 形式のバリデーション
-if [[ "$REPO" != */* ]]; then
+# owner/repo 形式のバリデーション（owner と repo が1区切りであることをチェック）
+if ! [[ "$REPO" =~ ^[^/]+/[^/]+$ ]]; then
   echo "Error: repository must be in 'owner/repo' format (got: '$REPO')"
   exit 1
 fi
@@ -57,14 +71,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SW_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # 呼び出し側リポジトリのローカルパスを特定
-# owner/repo の repo 部分を取得
-REPO_NAME="${REPO#*/}"
-# shared-workflows と同階層にあると仮定
-REPO_ROOT="$(cd "$SW_ROOT/.." && pwd)/$REPO_NAME"
+if [ -n "$TARGET_DIR" ]; then
+  REPO_ROOT="$TARGET_DIR"
+else
+  # owner/repo の repo 部分を取得し、shared-workflows と同階層を検索
+  REPO_NAME="${REPO#*/}"
+  REPO_ROOT="$(cd "$SW_ROOT/.." && pwd)/$REPO_NAME"
+fi
 
 if [ ! -d "$REPO_ROOT" ]; then
   echo "Error: Target repository not found at $REPO_ROOT"
-  echo "Expected the repository to be cloned alongside shared-workflows."
+  if [ -z "$TARGET_DIR" ]; then
+    echo "Expected the repository to be cloned alongside shared-workflows."
+    echo "Alternatively, use --target-dir to specify the path explicitly."
+  fi
   exit 1
 fi
 
@@ -89,6 +109,12 @@ copy_file() {
   local dst="$2"
   shift 2
 
+  if [ ! -f "$src" ]; then
+    echo "  ! $(basename "$dst") (source not found: $src)"
+    TOTAL_FAILED=$((TOTAL_FAILED + 1))
+    return 1
+  fi
+
   local dst_dir
   dst_dir="$(dirname "$dst")"
 
@@ -98,21 +124,37 @@ copy_file() {
     return 0
   fi
 
-  mkdir -p "$dst_dir"
+  if ! mkdir -p "$dst_dir"; then
+    echo "  ! $(basename "$dst") (failed to create directory: $dst_dir)"
+    TOTAL_FAILED=$((TOTAL_FAILED + 1))
+    return 1
+  fi
 
   if [ "$#" -gt 0 ]; then
     # プレースホルダー置換してコピー
     local content
-    content="$(cat "$src")"
+    if ! content="$(cat "$src")"; then
+      echo "  ! $(basename "$dst") (failed to read source)"
+      TOTAL_FAILED=$((TOTAL_FAILED + 1))
+      return 1
+    fi
     while [ "$#" -ge 2 ]; do
       local key="$1"
       local value="$2"
       content="${content//$key/$value}"
       shift 2
     done
-    printf '%s\n' "$content" > "$dst"
+    if ! printf '%s\n' "$content" > "$dst"; then
+      echo "  ! $(basename "$dst") (failed to write)"
+      TOTAL_FAILED=$((TOTAL_FAILED + 1))
+      return 1
+    fi
   else
-    cp "$src" "$dst"
+    if ! cp "$src" "$dst"; then
+      echo "  ! $(basename "$dst") (failed to copy)"
+      TOTAL_FAILED=$((TOTAL_FAILED + 1))
+      return 1
+    fi
   fi
 
   echo "  + $(basename "$dst")"
@@ -145,20 +187,20 @@ echo "--- Caller Workflows (.github/workflows/) ---"
 copy_file \
   "$SW_ROOT/examples/caller-workflows/claude.yml" \
   "$REPO_ROOT/.github/workflows/claude.yml" \
-  "<YOUR_USERNAME>" "$USERNAME"
+  "<YOUR_USERNAME>" "$USERNAME" || true
 
 # 残り3ファイルはそのままコピー
 copy_file \
   "$SW_ROOT/examples/caller-workflows/copilot-auto-fix.yml" \
-  "$REPO_ROOT/.github/workflows/copilot-auto-fix.yml"
+  "$REPO_ROOT/.github/workflows/copilot-auto-fix.yml" || true
 
 copy_file \
   "$SW_ROOT/examples/caller-workflows/post-merge.yml" \
-  "$REPO_ROOT/.github/workflows/post-merge.yml"
+  "$REPO_ROOT/.github/workflows/post-merge.yml" || true
 
 copy_file \
   "$SW_ROOT/examples/caller-workflows/late-review-scanner.yml" \
-  "$REPO_ROOT/.github/workflows/late-review-scanner.yml"
+  "$REPO_ROOT/.github/workflows/late-review-scanner.yml" || true
 
 # ─── 3. プロンプトテンプレート ──────────────────────────────────
 
@@ -167,7 +209,7 @@ echo "--- Prompts (.github/prompts/) ---"
 
 copy_file \
   "$SW_ROOT/examples/prompts/auto-fix-check-pr.md" \
-  "$REPO_ROOT/.github/prompts/auto-fix-check-pr.md"
+  "$REPO_ROOT/.github/prompts/auto-fix-check-pr.md" || true
 
 # ─── 4. GA 環境ルール ──────────────────────────────────────────
 
@@ -176,7 +218,7 @@ echo "--- Claude Config (.claude/) ---"
 
 copy_file \
   "$SW_ROOT/examples/claude/CLAUDE-auto-progress.md" \
-  "$REPO_ROOT/.claude/CLAUDE-auto-progress.md"
+  "$REPO_ROOT/.claude/CLAUDE-auto-progress.md" || true
 
 # ─── 5. Secrets 検証 ────────────────────────────────────────────
 
