@@ -164,7 +164,7 @@ caller が渡すリポジトリ固有の設定:
 
 - **禁止パターン**: 自動マージをブロックするファイルパターン（caller の `forbidden_patterns` 入力）
 - **プロンプトテンプレート**: レビュー指摘対応プロンプト（caller リポの `.github/prompts/` に配置）
-- **GA 環境ルール**: 自動実装時のカスタム指示。以下の2つの方式で注入でき、併用も可能:
+- **GA 環境ルール**: auto-progress 関連ジョブで共通利用する GA 環境向けカスタム指示。以下の2つの方式で注入でき、併用も可能:
   - **ファイル配置方式（推奨）**: caller リポの `.claude/CLAUDE-auto-progress.md` に配置。Claude Code がプロジェクト指示として自動読み込みする
   - **input 方式**: caller の `auto_progress_prompt` 入力で渡す。`prompt` input 経由で `<custom_instructions>` として注入
 
@@ -201,12 +201,12 @@ caller が `forbidden_patterns` 入力で指定したファイルパターンに
 
 ### 第4層: concurrency グループ
 
-ワークフローごとに concurrency グループで同時実行を制御する。進行中のジョブはキャンセルしない。
+特定ジョブごとに job-level concurrency グループで同時実行を制御する。進行中のジョブはキャンセルしない。
 
-| ワークフロー | グループキー | 並列実行 |
+| ジョブ | concurrency グループキー | 並列実行 |
 |---|---|---|
-| auto-implement | Issue 番号 | 異なる Issue 間で可能 |
-| copilot-auto-fix | PR 番号 | 異なる PR 間で可能 |
+| claude-auto-implement ジョブ（`.github/workflows/claude.yml`） | `claude-auto-implement-${{ github.event.issue.number }}` | 異なる Issue 間で可能 |
+| copilot-auto-fix ジョブ | PR 番号 | 異なる PR 間で可能 |
 
 ### 第5層: マージ前6条件チェック
 

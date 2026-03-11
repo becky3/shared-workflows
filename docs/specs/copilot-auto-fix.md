@@ -126,11 +126,13 @@ unresolved threads は GraphQL API で PR の `reviewThreads` から `isResolved
 以下の 6 条件を全て満たす場合にマージを実行する:
 
 1. PR が OPEN 状態
-2. unresolved threads == 0
+2. unresolved threads == 0（`auto:review-skipped` 時はスキップ）
 3. ステータスチェック通過（外部 CI 未設定時は自動 PASS、自ワークフローは除外）
 4. コンフリクトなし
 5. `auto:failed` ラベルなし
 6. 禁止パターンなし
+
+条件2は、Copilot レビューがタイムアウトして `auto:review-skipped` が付与された場合、レビュー自体が行われていないため自動的にスキップ（PASS）となる。事後レビューは late-review-scanner でカバーする。
 
 条件3の判定では、CheckRun（`status` / `conclusion`）と StatusContext（`state`）を区別して評価する。実行中（IN_PROGRESS / PENDING）のチェックは CI 完了待機ステップで解消済みのため、マージ判定時点では完了済みチェックのみが対象となる。
 
