@@ -126,7 +126,7 @@ unresolved threads は GraphQL API で PR の `reviewThreads` から `isResolved
 以下の 6 条件を全て満たす場合にマージを実行する:
 
 1. PR が OPEN 状態
-2. unresolved threads == 0
+2. unresolved threads == 0（`auto:review-skipped` 時はスキップ: レビュー未実施のため unresolved threads チェック不要）
 3. ステータスチェック通過（外部 CI 未設定時は自動 PASS、自ワークフローは除外）
 4. コンフリクトなし
 5. `auto:failed` ラベルなし

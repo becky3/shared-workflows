@@ -469,6 +469,7 @@ jobs:
           EXCLUDE_CHECK: ${{ inputs.exclude_check }}
           FORBIDDEN_DETECTED: ${{ steps.forbidden-check.outputs.forbidden }}
           FORBIDDEN_FILES: ${{ steps.forbidden-check.outputs.forbidden_files }}
+          REVIEW_SKIPPED: ${{ steps.copilot-timeout.outputs.review_skipped }}
 
       - name: Merge or dry-run
         if: steps.merge-check.outputs.merge_ready == 'true'

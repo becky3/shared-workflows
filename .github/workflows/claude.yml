@@ -78,6 +78,8 @@ jobs:
           bot_id: ${{ inputs.bot_id }}
           claude_args: |
             --model ${{ inputs.model }} --max-turns ${{ inputs.max_turns }} --dangerously-skip-permissions
+          # auto_progress_prompt が空の場合は空文字列が渡される
+          # claude-code-action は空文字列の prompt を「追加指示なし」として扱う（デフォルト動作を上書きしない）
           prompt: ${{ inputs.auto_progress_prompt }}
           track_progress: true
           show_full_output: true

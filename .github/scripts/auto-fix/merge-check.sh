@@ -9,6 +9,7 @@
 #   EXCLUDE_CHECK   — （任意）CI チェック除外名。自ワークフローの自己参照防止用
 #   FORBIDDEN_DETECTED — （任意）禁止パターン検出結果。"true" の場合マージ拒否
 #   FORBIDDEN_FILES  — （任意）禁止パターン該当ファイル一覧（multiline）。REASONS に含める
+#   REVIEW_SKIPPED   — （任意）"true" の場合、レビュースキップ（タイムアウト）。条件2の表示を変更
 #
 # 出力（$GITHUB_OUTPUT）:
 #   merge_ready     — "true" / "false"
@@ -41,7 +42,12 @@ else
 fi
 
 # 条件2: レビュー指摘ゼロ（既に has_issues=false で確認済み）
-echo "✅ Condition 2: No review issues"
+# REVIEW_SKIPPED=true の場合はレビュー未実施のためチェックをスキップ
+if [ "${REVIEW_SKIPPED:-}" = "true" ]; then
+  echo "⏭️ Condition 2: Review skipped (timeout) — unresolved threads check not applicable"
+else
+  echo "✅ Condition 2: No review issues"
+fi
 
 # 条件3: CI全チェック通過（GitHub API の statusCheckRollup を使用）
 # EXCLUDE_CHECK が設定されている場合、そのチェック名を除外する
