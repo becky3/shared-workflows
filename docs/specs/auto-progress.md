@@ -160,7 +160,13 @@ stateDiagram-v2
 | `post-merge.yml` | `pull_request[closed]` | マージ後の全 PR レビュー記録 |
 | `late-review-scanner.yml` | `schedule` + `workflow_dispatch` | マージ済み PR の事後レビュー指摘を検出・集約 |
 
-caller が渡すリポジトリ固有の設定:
+### dotfiles マージ
+
+`claude.yml` の各ジョブ（メンション応答・自動実装）の実行前に、dotfiles リポジトリから共通の `.claude/` 設定（エージェント・スキル・ルール等）を取得し、プロジェクトの `.claude/` にマージする。プロジェクト固有のファイルが既に存在する場合は上書きしない（no-clobber）。
+
+これにより、ローカル環境と同じエージェント・スキル・ルールが GA 環境でも利用可能になる。
+
+### caller が渡すリポジトリ固有の設定
 
 - **禁止パターン**: 自動マージをブロックするファイルパターン（caller の `forbidden_patterns` 入力）
 - **プロンプトテンプレート**: レビュー指摘対応プロンプト（caller リポの `.github/prompts/` に配置）
