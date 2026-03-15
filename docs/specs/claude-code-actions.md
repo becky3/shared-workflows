@@ -48,7 +48,7 @@ OAuth 認証を使用する。
 flowchart TD
     A[イベント発火] --> B{セキュリティチェック}
     B -->|NG| C[スキップ]
-    B -->|OK| D[dotfiles マージ<br/>共通 .claude/ 設定取得]
+    B -->|OK| D[agent-commons マージ<br/>共通 .claude/ 設定取得]
     D --> E[Claude Code 起動]
     E --> F[コンテキスト取得<br/>Issue/PR 情報]
     F --> G[タスク実行]
@@ -56,7 +56,7 @@ flowchart TD
 ```
 
 1. **セキュリティチェック**: ユーザー制限・メンション有無を検証し、条件を満たさない場合はスキップ
-2. **dotfiles マージ**: dotfiles リポジトリから共通の `.claude/` 設定（エージェント・スキル・ルール等）を取得し、プロジェクトの `.claude/` にマージする。プロジェクト固有のファイルは上書きしない（no-clobber）
+2. **agent-commons マージ**: agent-commons リポジトリから共通の `.claude/` 設定（エージェント・スキル・ルール等）を取得し、プロジェクトの `.claude/` にマージする。プロジェクト固有のファイルは上書きしない（no-clobber）
 3. **Claude Code 起動**: OAuth トークンで認証し、ターン制限付きで起動
 4. **コンテキスト取得**: 対象の Issue / PR の情報を取得
 5. **タスク実行**: メンション内容に基づきコードレビュー・実装・質問応答を実行
@@ -103,7 +103,7 @@ Caller から Reusable Workflow に渡す入力パラメータ:
 | シークレット | 概要 |
 |---|---|
 | `CLAUDE_CODE_OAUTH_TOKEN` | Claude Code Action の OAuth トークン |
-| `REPO_OWNER_PAT` | ワークフロー連鎖・PR 作成用の個人アクセストークン。dotfiles リポジトリへの読み取りアクセスも必要 |
+| `REPO_OWNER_PAT` | ワークフロー連鎖・PR 作成用の個人アクセストークン。agent-commons リポジトリへの読み取りアクセスも必要 |
 
 ## 関連ドキュメント
 

@@ -110,7 +110,7 @@ bash scripts/setup.sh owner/repo your_github_username --force
 | Secret | 必須 | 説明 |
 |--------|:----:|------|
 | `CLAUDE_CODE_OAUTH_TOKEN` | Yes | Claude Code Action の認証トークン |
-| `REPO_OWNER_PAT` | Yes | ワークフロー連鎖・PR 作成・dotfiles 読み取り用の Personal Access Token |
+| `REPO_OWNER_PAT` | Yes | ワークフロー連鎖・PR 作成・agent-commons 読み取り用の Personal Access Token |
 
 設定場所: リポジトリの Settings > Secrets and variables > Actions > **New repository secret**
 
@@ -126,14 +126,14 @@ claude setup-token
 
 #### REPO_OWNER_PAT の取得
 
-GitHub Personal Access Token。ワークフロー連鎖（GITHUB_TOKEN で作成した PR は他のワークフローをトリガーしない制約の回避）、PR 作成、および dotfiles リポジトリからの共通設定取得に使用する。
+GitHub Personal Access Token。ワークフロー連鎖（GITHUB_TOKEN で作成した PR は他のワークフローをトリガーしない制約の回避）、PR 作成、および agent-commons リポジトリからの共通設定取得に使用する。
 
 **Fine-grained token（推奨）:**
 
 1. GitHub > Settings > Developer settings > [Personal access tokens > Fine-grained tokens](https://github.com/settings/tokens?type=beta)
 2. **Generate new token** をクリック
 3. Token name: 任意（例: `shared-workflows-pat`）
-4. Repository access: **All repositories** または対象リポジトリ + `becky3/dotfiles` を個別選択
+4. Repository access: **All repositories** または対象リポジトリ + `becky3/agent-commons` を個別選択
 5. Permissions:
    - **Contents**: Read and write
    - **Issues**: Read and write
