@@ -60,10 +60,10 @@ jobs:
   claude:
     if: |
       github.actor == inputs.allowed_user && (
-        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'issues' && github.event.action != 'labeled' && contains(github.event.issue.body, '@claude')) ||
-        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
+        (github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review_comment' && startsWith(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'issues' && github.event.action != 'labeled' && startsWith(github.event.issue.body, '@claude')) ||
+        (github.event_name == 'pull_request_review' && startsWith(github.event.review.body, '@claude'))
       )
     runs-on: ubuntu-latest
     steps:
