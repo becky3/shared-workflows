@@ -1,0 +1,29 @@
+# Quality Check — Caller Workflow Example
+#
+# このファイルを呼び出し側リポジトリの .github/workflows/quality-check.yml に配置する。
+# プロジェクトに合わせてコマンドを調整すること。
+#
+# 前提:
+#   - shared-workflows リポが公開されていること（または同一 org 内でアクセス可能）
+#   - Branch protection rule で必須チェックに lint / test / typecheck 等を指定すること
+
+name: Quality Check
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  quality:
+    uses: becky3/shared-workflows/.github/workflows/quality-check.yml@main
+    with:
+      python_version: "3.11"
+      install_command: "uv sync"
+      test_command: "uv run pytest"
+      lint_command: "uv run ruff check src/ tests/"
+      typecheck_command: "uv run mypy src/"
+      markdownlint: true
+      # markdownlint_globs: "**/*.md"  # default

@@ -10,6 +10,7 @@ shared-workflows/
 ├── .github/
 │   ├── workflows/       # CI + Reusable Workflows + Caller
 │   │   ├── claude.yml          # Reusable: Claude Code Action
+│   │   ├── quality-check.yml   # Reusable: PR 品質チェック
 │   │   ├── claude-caller.yml   # Caller: 本リポ用（動作確認）
 │   │   └── ci.yml              # CI: shellcheck + actionlint
 │   └── scripts/         # ワークフローから呼ばれるスクリプト
@@ -36,6 +37,7 @@ shared-workflows/
 | `copilot-auto-fix.yml` | Copilot レビュー指摘の自動修正 + マージ | `CLAUDE_CODE_OAUTH_TOKEN`, `REPO_OWNER_PAT` |
 | `post-merge.yml` | マージ後の自動処理（review-batch Issue 更新） | — |
 | `late-review-scanner.yml` | マージ済み PR の事後レビュー指摘を検出・集約 | `REPO_OWNER_PAT` |
+| `quality-check.yml` | PR 品質チェック（テスト・lint・型チェック・markdownlint） | — |
 
 本リポにも caller（`claude-caller.yml`）を配置しており、`@claude` メンションで動作確認が可能。
 
@@ -47,6 +49,7 @@ shared-workflows/
 | [claude-code-actions](docs/specs/claude-code-actions.md) | `@claude` メンションによる Claude Code 呼び出し |
 | [copilot-auto-fix](docs/specs/copilot-auto-fix.md) | Copilot レビュー指摘の自動修正 + マージ |
 | [late-review-scanner](docs/specs/late-review-scanner.md) | マージ済み PR の事後レビュー指摘の定期検出・集約 |
+| [quality-check](docs/specs/quality-check.md) | PR 品質チェック（テスト・lint・型チェック・markdownlint） |
 
 ## ブランチ運用
 
