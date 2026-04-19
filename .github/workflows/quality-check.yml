@@ -1,0 +1,126 @@
+# Quality Check — Reusable Workflow
+#
+# PR マージ時の品質チェック（テスト・lint・型チェック・markdownlint）を提供。
+# 各チェックは独立ジョブで並列実行され、1つの失敗が他に影響しない。
+#
+# 呼び出し側の要件:
+#   - permissions: contents: read
+#   - トリガーイベント: pull_request
+
+name: Quality Check
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: 'Python version'
+        required: false
+        type: string
+        default: '3.11'
+      install-command:
+        description: 'Dependency install command (e.g. "uv sync")'
+        required: true
+        type: string
+      test-command:
+        description: 'Test command (e.g. "uv run pytest"). Empty to skip'
+        required: false
+        type: string
+        default: ''
+      lint-command:
+        description: 'Lint command (e.g. "uv run ruff check src/ tests/"). Empty to skip'
+        required: false
+        type: string
+        default: ''
+      typecheck-command:
+        description: 'Type check command (e.g. "uv run mypy src/"). Empty to skip'
+        required: false
+        type: string
+        default: ''
+      markdownlint:
+        description: 'Run markdownlint'
+        required: false
+        type: boolean
+        default: false
+      markdownlint-globs:
+        description: 'Glob patterns for markdownlint'
+        required: false
+        type: string
+        default: '**/*.md'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    if: inputs.lint-command != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install dependencies
+        run: ${{ inputs.install-command }}
+
+      - name: Run lint
+        run: ${{ inputs.lint-command }}
+
+  typecheck:
+    name: Type Check
+    if: inputs.typecheck-command != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install dependencies
+        run: ${{ inputs.install-command }}
+
+      - name: Run type check
+        run: ${{ inputs.typecheck-command }}
+
+  test:
+    name: Test
+    if: inputs.test-command != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install dependencies
+        run: ${{ inputs.install-command }}
+
+      - name: Run tests
+        run: ${{ inputs.test-command }}
+
+  markdownlint:
+    name: Markdown Lint
+    if: inputs.markdownlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2
+
+      - name: Run markdownlint
+        run: markdownlint-cli2 ${{ inputs.markdownlint-globs }}
