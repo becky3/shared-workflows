@@ -93,6 +93,21 @@ lint・typecheck・test の 3 ジョブは以下の共通パターンに従う:
 
 uv を使用しないプロジェクトではステップ 2 は無害（uv がインストールされるだけで使われない）。
 
+## Branch protection rule との連携
+
+### チェック名の命名規則
+
+Reusable workflow のジョブ名は GitHub の仕様により `{caller の job 名} / {reusable 側の job name}` の形式になる。caller の job 名は `jobs.<job_id>.name` で設定した値が使われ、未設定なら job キーがそのまま使われる。branch protection rule の必須チェックにはこのプレフィックス付きの名前を指定する。
+
+caller 側の job 名が `quality`（`name:` 未設定で job キーが `quality` の場合を含む）の場合の対応表。job 名または job キーを変更した場合はプレフィックスもそれに応じて変わる。
+
+| reusable 側のジョブ名 | branch protection rule に設定する名前 |
+| --- | --- |
+| Lint | `quality / Lint` |
+| Type Check | `quality / Type Check` |
+| Test | `quality / Test` |
+| Markdown Lint | `quality / Markdown Lint` |
+
 ## 出力
 
 ### 成功時

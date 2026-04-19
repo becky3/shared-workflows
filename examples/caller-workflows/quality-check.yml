@@ -5,7 +5,9 @@
 #
 # 前提:
 #   - shared-workflows リポが公開されていること（または同一 org 内でアクセス可能）
-#   - Branch protection rule で必須チェックに lint / test / typecheck 等を指定すること
+#   - Branch protection rule の必須チェック名のプレフィックスは caller 側 job の
+#     name: があればその表示名、未指定なら job キーになる
+#     例: job キーが "quality"（name: 未指定）の場合 → "quality / Lint", "quality / Test" 等
 
 name: Quality Check
 
