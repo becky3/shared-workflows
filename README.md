@@ -164,7 +164,8 @@ GitHub Personal Access Token。ワークフロー連鎖（GITHUB_TOKEN で作成
 
 リポジトリの Secret scanning と Push protection が有効になっていることを確認する。
 
-**確認手順**: リポジトリの Settings > Security（サイドバー） > Advanced Security で以下が有効であることを確認:
+**確認手順**: リポジトリの Settings > Security（サイドバー）> Advanced Security で以下が有効であることを確認する。
+GitHub の UI 更新により表示名が異なる場合は [公式ドキュメント](https://docs.github.com/en/code-security/secret-scanning/introduction/about-secret-scanning) を参照:
 
 - **Secret scanning**: Enabled
 - **Push protection**: Enabled
@@ -172,7 +173,7 @@ GitHub Personal Access Token。ワークフロー連鎖（GITHUB_TOKEN で作成
 **自動有効化されないケース**:
 
 - **private で作成し、後から public に変更したリポジトリ** — 作成時の自動有効化トリガーを逃すため、手動で有効化が必要
-- **private リポジトリ** — 個人アカウント（GitHub Free/Pro）では GitHub Advanced Security が利用不可のため、Secret scanning を設定できない。Organization の GitHub Enterprise Cloud プランが必要
+- **private リポジトリ** — 個人アカウント（GitHub Free/Pro）では Secret scanning を設定できない。private リポジトリで利用するには、GitHub Secret Protection が有効な Organization（GitHub Team または Enterprise Cloud）が必要
 
 > GitHub の個人アカウント設定で「Automatically enable for new public repositories」を有効にしていても、上記のケースでは自動有効化されない。新しいリポジトリをセットアップした際は必ず確認すること。
 
