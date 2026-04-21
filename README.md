@@ -160,6 +160,22 @@ GitHub Personal Access Token。ワークフロー連鎖（GITHUB_TOKEN で作成
 | `AUTO_MERGE_ENABLED` | `false` | `true` で自動マージ有効化（それ以外はドライラン） |
 | `COPILOT_REVIEW_TIMEOUT` | `900` | Copilot レビュー待機の最大秒数 |
 
+### セキュリティ設定の確認
+
+リポジトリの Secret scanning と Push protection が有効になっていることを確認する。
+
+**確認手順**: リポジトリの Settings > Security（サイドバー） > Advanced Security で以下が有効であることを確認:
+
+- **Secret scanning**: Enabled
+- **Push protection**: Enabled
+
+**自動有効化されないケース**:
+
+- **private で作成し、後から public に変更したリポジトリ** — 作成時の自動有効化トリガーを逃すため、手動で有効化が必要
+- **private リポジトリ** — 個人アカウント（GitHub Free/Pro）では GitHub Advanced Security が利用不可のため、Secret scanning を設定できない。Organization の GitHub Enterprise Cloud プランが必要
+
+> GitHub の個人アカウント設定で「Automatically enable for new public repositories」を有効にしていても、上記のケースでは自動有効化されない。新しいリポジトリをセットアップした際は必ず確認すること。
+
 ### 個別セットアップ
 
 統合スクリプトを使わず、手動で個別にセットアップする場合:
