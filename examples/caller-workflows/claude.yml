@@ -1,7 +1,7 @@
 # Claude Code — Caller Workflow Example
 #
 # このファイルを呼び出し側リポジトリの .github/workflows/claude.yml に配置する。
-# <YOUR_USERNAME> を GitHub ユーザー名に置き換えること。
+# 許可ユーザーは下記 allowed_user に GitHub ユーザー名を指定する（setup.sh 経由なら自動置換）。
 #
 # 前提:
 #   - Secrets: CLAUDE_CODE_OAUTH_TOKEN, REPO_OWNER_PAT
