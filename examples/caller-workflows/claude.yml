@@ -30,7 +30,7 @@ jobs:
     uses: becky3/shared-workflows/.github/workflows/claude.yml@main
     with:
       allowed_user: "<YOUR_USERNAME>"
-      # model: "claude-opus-4-6"       # default
+      # model: "opus"                  # default
       # max_turns: 100                  # default
       auto_progress_prompt: "GA環境専用ルールが .claude/CLAUDE-auto-progress.md にあります。このファイルを必ず読んでから作業を開始してください。ファイルが見つからない・読めない場合は、その旨をIssue/PRにコメントして作業を中断してください。"
     secrets:
