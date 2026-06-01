@@ -22,7 +22,7 @@ on:
         description: 'Claude model to use'
         required: false
         type: string
-        default: 'claude-opus-4-6'
+        default: 'opus'
       max_turns:
         description: 'Maximum conversation turns'
         required: false
@@ -156,9 +156,6 @@ jobs:
           bot_id: ${{ inputs.bot_id }}
           claude_args: |
             --model ${{ inputs.model }} --max-turns ${{ inputs.max_turns }} --dangerously-skip-permissions
-          # gh コマンドを許可: PR作成・Issue操作に必要
-          # デフォルトの allowed_tools には git コマンドのみで gh が含まれない
-          allowed_tools: "Bash(gh:*)"
           prompt: ${{ inputs.auto_progress_prompt }}
           track_progress: true
           show_full_output: true

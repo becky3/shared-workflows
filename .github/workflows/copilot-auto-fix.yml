@@ -38,7 +38,7 @@ on:
         description: 'Claude model to use for auto-fix'
         required: false
         type: string
-        default: 'claude-opus-4-6'
+        default: 'opus'
       max_turns:
         description: 'Maximum conversation turns for Claude'
         required: false
