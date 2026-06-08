@@ -215,7 +215,10 @@ else
   fi
 fi
 
-# --- 5. PR単位でコメント追記 ---
+# --- 5-6. PR単位で resolve → コメント追記 ---
+# 処理順は resolve → comment（先に resolve を試み、成功した thread のみコメントに含める）。
+# PAT 失効時にコメントだけが投稿されてスレッドが未解決のまま残り、
+# 次回 scan で再検出されてコメントが増殖する事象を構造的に防ぐ。
 COMMENTS_POSTED=0
 
 while IFS= read -r RESULT; do
@@ -223,58 +226,64 @@ while IFS= read -r RESULT; do
 
   PR_NUM=$(echo "$RESULT" | jq -r '.pr_number')
   PR_TTL=$(echo "$RESULT" | jq -r '.pr_title')
-  THREAD_IDS=()
-  COMMENT_LINKS=""
+  RESOLVED=0
+  FAILED=0
+  RESOLVED_LINKS=""
 
   while IFS= read -r THREAD; do
     URL=$(echo "$THREAD" | jq -r '.url')
     ID=$(echo "$THREAD" | jq -r '.id')
-    COMMENT_LINKS="${COMMENT_LINKS}
-- ${URL}"
-    THREAD_IDS+=("$ID")
-  done < <(echo "$RESULT" | jq -c '.threads[]')
 
-  COMMENT_BODY="## PR #${PR_NUM}: ${PR_TTL}
-${COMMENT_LINKS}"
-
-  if ! gh_safe_warning gh issue comment "$ISSUE_NUMBER" --repo "$GH_REPO" --body "$COMMENT_BODY"; then
-    echo "Failed to add comment for PR #$PR_NUM"
-    continue
-  fi
-
-  echo "Added comment for PR #$PR_NUM (${#THREAD_IDS[@]} thread(s))"
-  COMMENTS_POSTED=$((COMMENTS_POSTED + 1))
-
-  # --- 6. スレッド resolve ---
-  RESOLVED=0
-  FAILED=0
-  for THREAD_ID in "${THREAD_IDS[@]}"; do
     # フォーマット検証
-    if ! validate_thread_id "$THREAD_ID"; then
+    if ! validate_thread_id "$ID"; then
       FAILED=$((FAILED + 1))
       continue
     fi
 
     if ! ERROR=$(GH_TOKEN="$RESOLVE_TOKEN" gh api graphql -f query="
     mutation {
-      resolveReviewThread(input: { threadId: \"$THREAD_ID\" }) {
+      resolveReviewThread(input: { threadId: \"$ID\" }) {
         thread { isResolved }
       }
     }" 2>&1); then
+      # 認証/権限エラーは即停止（scan.sh 冒頭方針および他の API 呼び出しと同じパターン）
+      if echo "$ERROR" | grep -qiE '(401|403|authentication|forbidden|resource not accessible|bad credentials)'; then
+        echo "::error::Authentication/permission error while resolving thread $ID: $ERROR"
+        exit 1
+      fi
       FAILED=$((FAILED + 1))
-      echo "::warning::Failed to resolve thread $THREAD_ID: $ERROR"
+      echo "::warning::Failed to resolve thread $ID: $ERROR"
     else
       RESOLVED=$((RESOLVED + 1))
+      RESOLVED_LINKS="${RESOLVED_LINKS}
+- ${URL}"
     fi
-  done
+  done < <(echo "$RESULT" | jq -c '.threads[]')
 
   echo "  Resolved: $RESOLVED, Failed: $FAILED"
+
+  # resolve 成功 0 件の PR はコメント投稿しない（コメント増殖防止）
+  if [ "$RESOLVED" -eq 0 ]; then
+    echo "Skipping comment for PR #$PR_NUM (no threads resolved; $FAILED failed)"
+    continue
+  fi
+
+  COMMENT_BODY="## PR #${PR_NUM}: ${PR_TTL}
+${RESOLVED_LINKS}"
+
+  if ! gh_safe_warning gh issue comment "$ISSUE_NUMBER" --repo "$GH_REPO" --body "$COMMENT_BODY"; then
+    echo "Failed to add comment for PR #$PR_NUM"
+    continue
+  fi
+
+  echo "Added comment for PR #$PR_NUM ($RESOLVED thread(s))"
+  COMMENTS_POSTED=$((COMMENTS_POSTED + 1))
 
 done < "$RESULTS_FILE"
 
 # --- サマリー ---
 echo ""
 echo "=== Summary ==="
-echo "PRs with unresolved threads: $COMMENTS_POSTED"
+echo "PRs with newly resolved threads: $COMMENTS_POSTED"
 echo "Total unresolved threads: $TOTAL_THREADS"
 echo "Issue: #$ISSUE_NUMBER"
