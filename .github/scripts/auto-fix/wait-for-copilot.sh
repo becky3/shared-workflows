@@ -12,9 +12,11 @@
 #
 # 出力:
 #   copilot_reviewed=true|false（$GITHUB_OUTPUT 経由）
+#   copilot_review_enabled=true|false（$GITHUB_OUTPUT 経由）
+#     false: ruleset に copilot_code_review ルールが無く自動レビューが無効
 #
 # 終了コード:
-#   0 — タイムアウト or 正常検知（copilot_reviewed で呼び出し元が判断）
+#   0 — タイムアウト / 正常検知 / 自動レビュー無効（copilot_reviewed で呼び出し元が判断）
 #   1 — 回復不能エラー（権限/認証エラー）
 # API エラー:
 #   認証/権限エラー（401/403/forbidden/resource not accessible）→ exit 1（即停止）
@@ -29,6 +31,21 @@ source "$SCRIPT_DIR/_common.sh"
 
 require_env PR_NUMBER GH_TOKEN GH_REPO GITHUB_OUTPUT
 validate_pr_number "$PR_NUMBER" "PR_NUMBER"
+
+# --- Copilot 自動レビュー有効判定 ---
+# ruleset に copilot_code_review ルールが無ければ待機を即スキップ
+REVIEW_STATUS=$(bash "$SCRIPT_DIR/check-copilot-review-status.sh" 2>/dev/null) || REVIEW_STATUS="on"
+# stdout が on/off 以外（空文字含む）の場合は安全側にフォールバック
+if [ "$REVIEW_STATUS" != "off" ]; then
+  REVIEW_STATUS="on"
+fi
+if [ "$REVIEW_STATUS" = "off" ]; then
+  echo "Copilot auto-review is disabled for $GH_REPO (no copilot_code_review ruleset rule). Skipping review wait."
+  output "copilot_reviewed" "false"
+  output "copilot_review_enabled" "false"
+  exit 0
+fi
+output "copilot_review_enabled" "true"
 
 TIMEOUT="${COPILOT_REVIEW_TIMEOUT:-900}"
 POLL_INTERVAL=30
