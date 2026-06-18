@@ -203,23 +203,54 @@ jobs:
           COPILOT_REVIEW_TIMEOUT: ${{ vars.COPILOT_REVIEW_TIMEOUT }}
 
       - name: Handle Copilot review timeout
-        if: steps.preconditions.outputs.skip != 'true' && steps.copilot-wait.outputs.copilot_reviewed == 'false'
+        if: steps.preconditions.outputs.skip != 'true' && steps.copilot-wait.outputs.copilot_reviewed == 'false' && steps.copilot-wait.outputs.copilot_review_enabled == 'true'
         id: copilot-timeout
         continue-on-error: true
         run: |
           # マージパスへの続行を最優先で出力（API 障害でステップ失敗しても merge-path で拾えるよう continue-on-error と併用）
           echo "review_skipped=true" >> "$GITHUB_OUTPUT"
 
-          source "$GITHUB_WORKSPACE/.shared/.github/scripts/auto-fix/_common.sh"
           PR_NUMBER="${{ steps.pr-info.outputs.number }}"
-
-          gh_safe gh issue edit "$PR_NUMBER" --add-label "auto:review-skipped"
-          gh_comment "$PR_NUMBER" "## copilot-auto-fix: Copilot レビュースキップ
+          COMMON="$GITHUB_WORKSPACE/.shared/.github/scripts/auto-fix/_common.sh"
+          # shellcheck disable=SC1090
+          if source "$COMMON"; then
+            gh_safe gh issue edit "$PR_NUMBER" --add-label "auto:review-skipped"
+            gh_comment "$PR_NUMBER" "## copilot-auto-fix: Copilot レビュースキップ
 
           Copilot のレビューが制限時間内に検知されませんでした。
           レビューをスキップしてマージ判定に進みます（事後レビュー late-review-scanner でカバー）。
 
           [Actions ログ](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          else
+            echo "::warning::Failed to source _common.sh. Label and comment steps skipped."
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Handle Copilot review disabled
+        if: steps.preconditions.outputs.skip != 'true' && steps.copilot-wait.outputs.copilot_review_enabled == 'false'
+        id: copilot-review-disabled
+        continue-on-error: true
+        run: |
+          # マージパスへの続行を最優先で出力（API 障害でステップ失敗しても merge-path で拾えるよう continue-on-error と併用）
+          echo "review_skipped=true" >> "$GITHUB_OUTPUT"
+
+          PR_NUMBER="${{ steps.pr-info.outputs.number }}"
+          COMMON="$GITHUB_WORKSPACE/.shared/.github/scripts/auto-fix/_common.sh"
+          # shellcheck disable=SC1090
+          if source "$COMMON"; then
+            gh_safe gh issue edit "$PR_NUMBER" --add-label "auto:review-skipped"
+            gh_comment "$PR_NUMBER" "## copilot-auto-fix: Copilot レビュースキップ（自動レビュー無効）
+
+          このリポジトリの ruleset に \`copilot_code_review\` ルールが設定されていないため、Copilot 自動レビューをスキップしてマージ判定に進みます。
+
+          Copilot 自動レビューを有効にするには、リポジトリの Settings > Rules > Rulesets で \`copilot_code_review\` ルールを追加してください。
+
+          [Actions ログ](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          else
+            echo "::warning::Failed to source _common.sh. Label and comment steps skipped."
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -383,7 +414,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
 
       # --- マージ判定 ---
-      # 条件: (Copilot検知済み AND (指摘なし OR 修正完了)) OR レビュースキップ
+      # 条件: (Copilot検知済み AND (指摘なし OR 修正完了)) OR レビュースキップ（タイムアウト OR 自動レビュー無効）
       # 禁止パターンはマージ直前にチェックし、merge-check.sh 内で条件6として判定
       # 品質チェック（pytest/ruff/mypy/markdownlint）はエージェント内テストで担保済み（外部CIワークフロー不使用）
 
@@ -394,14 +425,23 @@ jobs:
         run: |
           set -euo pipefail
           COPILOT_REVIEWED="${{ steps.copilot-wait.outputs.copilot_reviewed }}"
-          REVIEW_SKIPPED="${{ steps.copilot-timeout.outputs.review_skipped }}"
+          REVIEW_SKIPPED_TIMEOUT="${{ steps.copilot-timeout.outputs.review_skipped }}"
+          REVIEW_SKIPPED_DISABLED="${{ steps.copilot-review-disabled.outputs.review_skipped }}"
           HAS_ISSUES="${{ steps.review-result.outputs.has_issues }}"
           RECOUNT_HAS_ISSUES="${{ steps.recount.outputs.has_issues }}"
 
+          # ステップが skipped の場合 outputs は空文字列になるため、明示的に false 初期化してから true チェックする
+          REVIEW_SKIPPED="false"
+          if [ "$REVIEW_SKIPPED_TIMEOUT" = "true" ] || [ "$REVIEW_SKIPPED_DISABLED" = "true" ]; then
+            REVIEW_SKIPPED="true"
+          fi
+
           if [ "$REVIEW_SKIPPED" = "true" ]; then
             echo "eligible=true" >> "$GITHUB_OUTPUT"
-            echo "Merge path: review skipped (timeout)"
+            echo "Merge path: review skipped (timeout or disabled)"
           elif [ "$COPILOT_REVIEWED" = "true" ]; then
+            # RECOUNT_HAS_ISSUES は HAS_ISSUES=true 時のみステップが実行されるため、
+            # ステップ skipped 時は空文字列になる。空文字列は "true" でないため eligible=true に倒れる
             if [ "$HAS_ISSUES" != "true" ] || [ "$RECOUNT_HAS_ISSUES" != "true" ]; then
               echo "eligible=true" >> "$GITHUB_OUTPUT"
               echo "Merge path: review completed, issues resolved"
